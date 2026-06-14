@@ -1,6 +1,6 @@
 # RadarLite
 
-Lightweight Android speed camera warning app. No ads. No analytics SDK. No navigation. RadarLite monitors location on-device and alerts when an OpenStreetMap speed-camera record appears ahead.
+Lightweight Android speed camera warning app. No ads. No analytics SDK. No navigation. RadarLite passively listens for location updates produced by other apps and alerts when an OpenStreetMap speed-camera record appears ahead.
 
 ## Status
 
@@ -65,17 +65,16 @@ RadarLite is licensed under the GNU Affero General Public License v3.0 or later.
 
 ## Privacy
 
-RadarLite does not include ads, analytics, crash reporting, or a tracking SDK. Location and activity-recognition data are processed on device for camera detection. The app makes network requests only when checking/downloading the camera database from GitHub Releases.
+RadarLite does not include ads, analytics, crash reporting, or a tracking SDK. Location data is processed on device for camera detection. The app makes network requests only when checking/downloading the camera database from GitHub Releases.
 
 ## Architecture
 
 ```
 CameraDetectionService (ForegroundService)
-├── LocationStrategy        — tiered passive/active/precise GPS
+├── LocationStrategy        — passive-only location listener
 ├── AlertEngine             — proximity + direction check + staged alerts
 ├── SoundManager            — programmatic tone generation via AudioTrack
-├── CameraDbHelper          — raw SQLite reads from cameras.db
-└── ActivityReceiver        — driving/stationary state from ActivityTransitions API
+└── CameraDbHelper          — raw SQLite reads from cameras.db
 
 AppDatabase (Room)          — alert_log only
 
@@ -86,4 +85,10 @@ ServiceState (StateFlow)    — shared state observable from MainActivity
 
 ## Battery impact
 
-When another navigation app (Waze, Google Maps) is active, RadarLite uses `PRIORITY_PASSIVE` location and receives zero-cost GPS fixes. It only activates its own GPS polling when driving with no other navigation app open.
+RadarLite uses `PRIORITY_PASSIVE` location only. It does not start its own GPS polling, including when driving or near a camera. In practice, it works when another app or the system is already producing location fixes, such as a navigation app running in the foreground. If no external location fixes are produced, RadarLite stays idle and will not alert.
+
+## Changelog
+
+### 1.0.0
+
+- Initial version

@@ -69,12 +69,8 @@ class MainActivity : AppCompatActivity() {
     private val requestNotifications = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {
-        requestActivityRecognition()
+        startService()
     }
-
-    private val requestActivity = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { /* optional, proceed either way */ startService() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -217,9 +213,7 @@ class MainActivity : AppCompatActivity() {
             ))
             !hasBgLocation()   -> requestBackgroundLocation()
             !hasPostNotifications() -> requestPostNotifications()
-            else               -> {
-                requestActivityRecognition()
-            }
+            else               -> startService()
         }
     }
 
@@ -244,14 +238,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun requestPostNotifications() {
-        if (hasPostNotifications()) { requestActivityRecognition(); return }
+        if (hasPostNotifications()) { startService(); return }
         requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
-    }
-
-    private fun requestActivityRecognition() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) { startService(); return }
-        if (hasActivityRecognition()) { startService(); return }
-        requestActivity.launch(Manifest.permission.ACTIVITY_RECOGNITION)
     }
 
     private fun startService() {
@@ -277,12 +265,6 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return true
         return ContextCompat.checkSelfPermission(
             this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED
-    }
-
-    private fun hasActivityRecognition(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return true
-        return ContextCompat.checkSelfPermission(
-            this, Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun hasPostNotifications(): Boolean {
