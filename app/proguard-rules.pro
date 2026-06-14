@@ -1,0 +1,5 @@
+-keep class com.radarlite.db.** { *; }
+-keep class com.radarlite.service.** { *; }
+-keep class com.radarlite.receiver.** { *; }
+-keepattributes *Annotation*
+-dontwarn okhttp3.**

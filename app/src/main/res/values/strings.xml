@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">RadarLite</string>
+    <string name="status_monitoring">Monitoring</string>
+    <string name="status_stopped">Stopped</string>
+    <string name="status_waiting">Waiting for motion</string>
+    <string name="gps_passive">Passive (via other app)</string>
+    <string name="gps_active">Active (own GPS)</string>
+    <string name="gps_precise">Precise (near camera)</string>
+    <string name="gps_none">No fix</string>
+    <string name="btn_check_update">Check for update</string>
+    <string name="no_database">No database</string>
+    <string name="no_alerts">No alerts yet</string>
+    <string name="disclaimer_title">Legal notice</string>
+    <string name="disclaimer_message">Speed camera warning apps are illegal in some countries. You are responsible for checking the laws in your region before use.</string>
+    <string name="disclaimer_ok">I understand</string>
+    <string name="notification_title">RadarLite</string>
+    <string name="notification_text">Monitoring for speed cameras</string>
+    <string name="perm_rationale_background">Background location is needed so RadarLite works while you drive with the screen off. Select Allow all the time on the next screen.</string>
+    <string name="updating_db">Checking for database update…</string>
+    <string name="db_up_to_date">Database is up to date</string>
+    <string name="db_updated">Database updated</string>
+    <string name="db_update_failed">Update failed. Try again later.</string>
+    <string name="not_on_wifi">Connect to Wi-Fi to update the database</string>
+</resources>

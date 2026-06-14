@@ -1,0 +1,53 @@
+name: Update Camera Database
+
+on:
+  schedule:
+    - cron: '0 3 * * 0'   # every Sunday 03:00 UTC
+  workflow_dispatch:        # allow manual trigger via GitHub UI > Actions tab
+
+permissions:
+  contents: write           # needed to create GitHub Releases
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pipeline dependencies
+        run: cd pipeline && npm ci
+
+      - name: Fetch OSM data
+        run: node pipeline/fetch_osm.js
+
+      - name: Merge and deduplicate
+        run: node pipeline/merge.js
+
+      - name: Build SQLite + gzip
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node pipeline/build_db.js
+
+      - name: Get today's date
+        id: date
+        run: echo "date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
+
+      # Creates/updates a GitHub Release and attaches cameras.db.gz + version.json.
+      # The Android app downloads from the stable "latest" URL — no R2 account needed.
+      - name: Publish to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: db-${{ steps.date.outputs.date }}
+          name: Camera DB ${{ steps.date.outputs.date }}
+          body: "Automated weekly update from OpenStreetMap"
+          files: |
+            /tmp/cameras.db.gz
+            /tmp/version.json

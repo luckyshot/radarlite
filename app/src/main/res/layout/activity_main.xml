@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_primary"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingBottom="20dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/app_name"
+                android:textColor="@color/text_primary"
+                android:textSize="22sp"/>
+
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/switchService"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <!-- Status Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/card_bg"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView style="@style/SectionLabel" android:text="STATUS"/>
+
+            <LinearLayout style="@style/StatusRow">
+                <TextView style="@style/RowLabel" android:text="Service"/>
+                <TextView android:id="@+id/tvServiceStatus" style="@style/RowValue" android:text="@string/status_stopped"/>
+            </LinearLayout>
+            <LinearLayout style="@style/StatusRow">
+                <TextView style="@style/RowLabel" android:text="GPS"/>
+                <TextView android:id="@+id/tvGpsMode" style="@style/RowValue" android:text="—"/>
+            </LinearLayout>
+            <LinearLayout style="@style/StatusRow">
+                <TextView style="@style/RowLabel" android:text="Speed"/>
+                <TextView android:id="@+id/tvSpeed" style="@style/RowValue" android:text="—"/>
+            </LinearLayout>
+            <LinearLayout style="@style/StatusRow">
+                <TextView style="@style/RowLabel" android:text="Cameras nearby"/>
+                <TextView android:id="@+id/tvCamerasNear" style="@style/RowValue" android:text="0"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Database Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/card_bg"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView style="@style/SectionLabel" android:text="DATABASE"/>
+
+            <LinearLayout style="@style/StatusRow">
+                <TextView style="@style/RowLabel" android:text="Version"/>
+                <TextView android:id="@+id/tvDbVersion" style="@style/RowValue" android:text="—"/>
+            </LinearLayout>
+            <LinearLayout style="@style/StatusRow">
+                <TextView style="@style/RowLabel" android:text="Cameras"/>
+                <TextView android:id="@+id/tvDbCount" style="@style/RowValue" android:text="—"/>
+            </LinearLayout>
+            <LinearLayout style="@style/StatusRow">
+                <TextView style="@style/RowLabel" android:text="Last check"/>
+                <TextView android:id="@+id/tvLastCheck" style="@style/RowValue" android:text="—"/>
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCheckUpdate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:backgroundTint="@color/accent"
+                android:text="@string/btn_check_update"
+                android:textColor="@color/bg_primary"
+                style="@style/Widget.MaterialComponents.Button"/>
+        </LinearLayout>
+
+        <!-- Alerts Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/card_bg"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView style="@style/SectionLabel" android:text="RECENT ALERTS"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvAlerts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"/>
+
+            <TextView
+                android:id="@+id/tvNoAlerts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingVertical="16dp"
+                android:text="@string/no_alerts"
+                android:textAlignment="center"
+                android:textColor="@color/text_secondary"/>
+        </LinearLayout>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>
