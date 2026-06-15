@@ -44,4 +44,12 @@
         <item name="backgroundTint">@color/accent</item>
         <item name="android:textColor">@color/bg_primary</item>
     </style>
+    <style name="GuideText">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginBottom">8dp</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:lineSpacingExtra">2dp</item>
+    </style>
 </resources>

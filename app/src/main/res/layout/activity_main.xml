@@ -26,12 +26,12 @@
                 android:fontFamily="sans-serif-medium"
                 android:text="@string/app_name"
                 android:textColor="@color/text_primary"
-                android:textSize="22sp"/>
+                android:textSize="22sp" />
 
             <androidx.appcompat.widget.SwitchCompat
                 android:id="@+id/switchService"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content" />
         </LinearLayout>
 
         <!-- Status Card -->
@@ -43,27 +43,28 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <TextView style="@style/SectionLabel" android:text="STATUS"/>
+            <TextView style="@style/SectionLabel" android:text="STATUS" />
 
             <LinearLayout style="@style/StatusRow">
-                <TextView style="@style/RowLabel" android:text="Service"/>
-                <TextView android:id="@+id/tvServiceStatus" style="@style/RowValue" android:text="@string/status_stopped"/>
+                <TextView style="@style/RowLabel" android:text="Service" />
+                <TextView android:id="@+id/tvServiceStatus" style="@style/RowValue"
+                    android:text="@string/status_stopped" />
             </LinearLayout>
             <LinearLayout style="@style/StatusRow">
-                <TextView style="@style/RowLabel" android:text="GPS"/>
-                <TextView android:id="@+id/tvGpsMode" style="@style/RowValue" android:text="—"/>
+                <TextView style="@style/RowLabel" android:text="GPS" />
+                <TextView android:id="@+id/tvGpsMode" style="@style/RowValue" android:text="—" />
             </LinearLayout>
             <LinearLayout style="@style/StatusRow">
-                <TextView style="@style/RowLabel" android:text="Speed"/>
-                <TextView android:id="@+id/tvSpeed" style="@style/RowValue" android:text="—"/>
+                <TextView style="@style/RowLabel" android:text="Speed" />
+                <TextView android:id="@+id/tvSpeed" style="@style/RowValue" android:text="—" />
             </LinearLayout>
             <LinearLayout style="@style/StatusRow">
-                <TextView style="@style/RowLabel" android:text="Cameras nearby"/>
-                <TextView android:id="@+id/tvCamerasNear" style="@style/RowValue" android:text="0"/>
+                <TextView style="@style/RowLabel" android:text="Cameras nearby" />
+                <TextView android:id="@+id/tvCamerasNear" style="@style/RowValue" android:text="0" />
             </LinearLayout>
             <LinearLayout style="@style/StatusRow">
-                <TextView style="@style/RowLabel" android:text="Closest camera"/>
-                <TextView android:id="@+id/tvClosestCamera" style="@style/RowValue" android:text="—"/>
+                <TextView style="@style/RowLabel" android:text="Closest camera" />
+                <TextView android:id="@+id/tvClosestCamera" style="@style/RowValue" android:text="—" />
             </LinearLayout>
         </LinearLayout>
 
@@ -76,7 +77,7 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <TextView style="@style/SectionLabel" android:text="@string/sound_test_title"/>
+            <TextView style="@style/SectionLabel" android:text="@string/sound_test_title" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -87,13 +88,13 @@
                     android:id="@+id/btnTestWarning"
                     style="@style/SoundTestButton"
                     android:layout_marginEnd="6dp"
-                    android:text="@string/btn_test_warning"/>
+                    android:text="@string/btn_test_warning" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnTestUrgent"
                     style="@style/SoundTestButton"
                     android:layout_marginStart="6dp"
-                    android:text="@string/btn_test_urgent"/>
+                    android:text="@string/btn_test_urgent" />
             </LinearLayout>
         </LinearLayout>
 
@@ -106,19 +107,19 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <TextView style="@style/SectionLabel" android:text="DATABASE"/>
+            <TextView style="@style/SectionLabel" android:text="DATABASE" />
 
             <LinearLayout style="@style/StatusRow">
-                <TextView style="@style/RowLabel" android:text="Version"/>
-                <TextView android:id="@+id/tvDbVersion" style="@style/RowValue" android:text="—"/>
+                <TextView style="@style/RowLabel" android:text="Version" />
+                <TextView android:id="@+id/tvDbVersion" style="@style/RowValue" android:text="—" />
             </LinearLayout>
             <LinearLayout style="@style/StatusRow">
-                <TextView style="@style/RowLabel" android:text="Cameras"/>
-                <TextView android:id="@+id/tvDbCount" style="@style/RowValue" android:text="—"/>
+                <TextView style="@style/RowLabel" android:text="Cameras" />
+                <TextView android:id="@+id/tvDbCount" style="@style/RowValue" android:text="—" />
             </LinearLayout>
             <LinearLayout style="@style/StatusRow">
-                <TextView style="@style/RowLabel" android:text="Last check"/>
-                <TextView android:id="@+id/tvLastCheck" style="@style/RowValue" android:text="—"/>
+                <TextView style="@style/RowLabel" android:text="Last check" />
+                <TextView android:id="@+id/tvLastCheck" style="@style/RowValue" android:text="—" />
             </LinearLayout>
 
             <com.google.android.material.button.MaterialButton
@@ -129,24 +130,25 @@
                 android:backgroundTint="@color/accent"
                 android:text="@string/btn_check_update"
                 android:textColor="@color/bg_primary"
-                style="@style/Widget.MaterialComponents.Button"/>
+                style="@style/Widget.MaterialComponents.Button" />
         </LinearLayout>
 
         <!-- Alerts Card -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
             android:background="@drawable/card_bg"
             android:orientation="vertical"
             android:padding="16dp">
 
-            <TextView style="@style/SectionLabel" android:text="RECENT ALERTS"/>
+            <TextView style="@style/SectionLabel" android:text="RECENT ALERTS" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvAlerts"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"/>
+                android:nestedScrollingEnabled="false" />
 
             <TextView
                 android:id="@+id/tvNoAlerts"
@@ -155,7 +157,20 @@
                 android:paddingVertical="16dp"
                 android:text="@string/no_alerts"
                 android:textAlignment="center"
-                android:textColor="@color/text_secondary"/>
+                android:textColor="@color/text_secondary" />
+        </LinearLayout>
+
+        <!-- Guide Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/card_bg"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView style="@style/SectionLabel" android:text="@string/guide_title" />
+            <TextView style="@style/GuideText" android:text="@string/guide_sound" />
+            <TextView style="@style/GuideText" android:text="@string/guide_passive" />
         </LinearLayout>
 
     </LinearLayout>

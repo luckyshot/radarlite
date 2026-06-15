@@ -18,6 +18,12 @@
     <string name="sound_test_title">SOUND TEST</string>
     <string name="btn_test_warning">Warning</string>
     <string name="btn_test_urgent">Urgent</string>
+    <string name="guide_title">QUICK GUIDE</string>
+    <string name="guide_sound">Sounds: There are two type of sounds: a short double beep (warning)
+        at 120-420m and a long higher pitch beep (urgent) at 40-150m.</string>
+    <string name="guide_passive">RadarLite only activates when your GPS is actively being used by a
+        navigation app. This makes the app very battery efficient but requires you to drive with a
+        navigation app active in order to receive alerts.</string>
     <string name="perm_rationale_background">Background location is needed so RadarLite can receive
         passive location updates while using Waze, Google Maps, etc. Select Location and Allow all
         the time.</string>
