@@ -120,7 +120,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupSoundButtons() {
-        binding.btnTestWarning.setOnClickListener { soundManager.play(AlertStage.WARNING) }
+        binding.btnTestWarning.setOnClickListener { soundManager.play(AlertStage.WARNING, speedLimit = 50) }
         binding.btnTestUrgent.setOnClickListener { soundManager.play(AlertStage.URGENT) }
     }
 

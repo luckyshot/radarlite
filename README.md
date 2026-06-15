@@ -95,3 +95,5 @@ RadarLite uses `PRIORITY_PASSIVE` location only. It does not start its own GPS p
 - Shows the distance to the closest camera found during passive monitoring.
 - Adds warning and urgent sound-test buttons to the main screen.
 - Makes the urgent alert longer and higher pitched than the warning alert.
+- Says the known speed limit after warning beeps, including the warning sound test.
+- Queues speed-limit speech until Android Text-to-Speech is ready.

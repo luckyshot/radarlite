@@ -2,19 +2,51 @@ package com.radarlite.alert
 
 import android.content.Context
 import android.media.*
+import android.os.Handler
+import android.os.Looper
+import android.speech.tts.TextToSpeech
 import kotlinx.coroutines.*
 import kotlin.math.*
+import java.util.Locale
 
 class SoundManager(context: Context) {
     private val audioManager = context.getSystemService(AudioManager::class.java)
+    private val mainHandler = Handler(Looper.getMainLooper())
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private var tts: TextToSpeech? = null
+    @Volatile private var ttsReady = false
+    @Volatile private var pendingSpeech: String? = null
 
-    fun play(stage: AlertStage) {
+    init {
+        // TTS is async; alerts still beep if the engine is not ready yet.
+        tts = TextToSpeech(context.applicationContext) { status ->
+            mainHandler.post {
+                ttsReady = status == TextToSpeech.SUCCESS
+                if (ttsReady) {
+                    tts?.language = Locale.getDefault()
+                    tts?.setAudioAttributes(AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .build())
+                    pendingSpeech?.let { sayNow(it) }
+                    pendingSpeech = null
+                }
+            }
+        }
+    }
+
+    fun play(stage: AlertStage, speedLimit: Int? = null) {
         if (audioManager.ringerMode == AudioManager.RINGER_MODE_SILENT) return
         scope.launch {
             when (stage) {
-                AlertStage.WARNING -> burst(freqHz = 880f, count = 3, durationMs = 90, gapMs = 220)
-                AlertStage.URGENT  -> burst(freqHz = 1_200f, count = 3, durationMs = 700, gapMs = 120)
+                AlertStage.WARNING -> {
+                    burst(freqHz = 880f, count = 3, durationMs = 90, gapMs = 220)
+                    speedLimit?.let { speak("Limit $it") }
+                }
+                AlertStage.URGENT  -> {
+                    tts?.stop()
+                    burst(freqHz = 1_200f, count = 3, durationMs = 700, gapMs = 120)
+                }
             }
         }
     }
@@ -25,6 +57,17 @@ class SoundManager(context: Context) {
             beep(freqHz, durationMs)
             if (index < count - 1) delay(gapMs)
         }
+    }
+
+    private fun speak(text: String) {
+        // If the user taps the test button before TTS is ready, keep the latest phrase.
+        mainHandler.post {
+            if (ttsReady) sayNow(text) else pendingSpeech = text
+        }
+    }
+
+    private fun sayNow(text: String) {
+        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "radarlite_limit")
     }
 
     private suspend fun beep(freqHz: Float, durationMs: Int) {
@@ -67,5 +110,8 @@ class SoundManager(context: Context) {
         track.release()
     }
 
-    fun release() = scope.cancel()
+    fun release() {
+        mainHandler.post { tts?.shutdown() }
+        scope.cancel()
+    }
 }
