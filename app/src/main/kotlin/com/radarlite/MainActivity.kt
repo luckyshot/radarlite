@@ -225,10 +225,7 @@ class MainActivity : AppCompatActivity() {
             .setMessage(getString(R.string.perm_rationale_background))
             .setPositiveButton("Open Settings") { _, _ ->
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    openAppSettings.launch(Intent(
-                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                        Uri.parse("package:$packageName")
-                    ))
+                    openAppSettings.launch(appLocationSettingsIntent())
                 } else {
                     requestBgLocation.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
                 }
@@ -236,6 +233,10 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Cancel") { _, _ -> binding.switchService.isChecked = false }
             .show()
     }
+
+    private fun appLocationSettingsIntent(): Intent =
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))
+            .putExtra(":settings:fragment_args_key", "permissions_location")
 
     private fun requestPostNotifications() {
         if (hasPostNotifications()) { startService(); return }

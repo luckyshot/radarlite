@@ -15,9 +15,9 @@
     <string name="disclaimer_ok">I understand</string>
     <string name="notification_title">RadarLite</string>
     <string name="notification_text">Monitoring for speed cameras</string>
-    <string name="perm_rationale_background">Background location is needed so RadarLite works while
-        you drive with your navigation app (Waze, Google Maps, etc). Select Allow all the time on
-        the next screen.</string>
+    <string name="perm_rationale_background">Background location is needed so RadarLite can receive
+        passive location updates while using Waze, Google Maps, etc. Select Location and Allow all
+        the time.</string>
     <string name="updating_db">Checking for database update…</string>
     <string name="db_up_to_date">Database is up to date</string>
     <string name="db_updated">Database updated</string>
