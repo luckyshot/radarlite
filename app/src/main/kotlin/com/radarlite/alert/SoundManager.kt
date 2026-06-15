@@ -13,13 +13,17 @@ class SoundManager(context: Context) {
         if (audioManager.ringerMode == AudioManager.RINGER_MODE_SILENT) return
         scope.launch {
             when (stage) {
-                AlertStage.WARNING -> {
-                    beep(880f, 90)
-                    delay(130)
-                    beep(880f, 90)
-                }
-                AlertStage.URGENT -> beep(1_200f, 650)
+                AlertStage.WARNING -> burst(freqHz = 880f, count = 3, durationMs = 90, gapMs = 220)
+                AlertStage.URGENT  -> burst(freqHz = 1_200f, count = 3, durationMs = 700, gapMs = 120)
             }
+        }
+    }
+
+    // One alert burst is intentionally short so repeated bursts are easy to count.
+    private suspend fun burst(freqHz: Float, count: Int, durationMs: Int, gapMs: Long) {
+        repeat(count) { index ->
+            beep(freqHz, durationMs)
+            if (index < count - 1) delay(gapMs)
         }
     }
 
