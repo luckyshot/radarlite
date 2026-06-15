@@ -77,12 +77,12 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        showDisclaimerIfFirst()
         setupRecyclerView()
         setupSwitch()
         setupUpdateButton()
         observeServiceState()
         observeAlertLog()
+        showDisclaimerIfFirst { promptForInitialDatabaseIfMissing() }
     }
 
     // ---- Setup ----
@@ -103,32 +103,60 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupUpdateButton() {
         binding.btnCheckUpdate.setOnClickListener {
-            binding.btnCheckUpdate.isEnabled = false
-            binding.btnCheckUpdate.text = getString(R.string.updating_db)
-
             lifecycleScope.launch {
-                val dbHelper = CameraDbHelper(applicationContext).also { it.open() }
-                val result = try {
-                    DatabaseUpdater.checkAndUpdate(applicationContext, dbHelper)
-                } finally {
-                    dbHelper.close()
-                }
-                val msg = when (result) {
-                    DatabaseUpdater.Result.UPDATED      -> getString(R.string.db_updated)
-                    DatabaseUpdater.Result.UP_TO_DATE   -> getString(R.string.db_up_to_date)
-                    DatabaseUpdater.Result.NOT_ON_WIFI  -> getString(R.string.not_on_wifi)
-                    DatabaseUpdater.Result.FAILED       -> getString(R.string.db_update_failed)
-                }
-                showToast(msg)
-                binding.btnCheckUpdate.text = getString(R.string.btn_check_update)
-                binding.btnCheckUpdate.isEnabled = true
-                if (result == DatabaseUpdater.Result.UPDATED ||
-                    result == DatabaseUpdater.Result.UP_TO_DATE) {
-                    ServiceState.lastDbCheckMs.value = System.currentTimeMillis()
-                }
-                refreshDatabaseState()
+                runDatabaseUpdate(requireWifi = true)
             }
         }
+    }
+
+    private suspend fun runDatabaseUpdate(requireWifi: Boolean): DatabaseUpdater.Result {
+        binding.btnCheckUpdate.isEnabled = false
+        binding.btnCheckUpdate.text = getString(R.string.updating_db)
+
+        val dbHelper = CameraDbHelper(applicationContext).also { it.open() }
+        val result = try {
+            DatabaseUpdater.checkAndUpdate(applicationContext, dbHelper, requireWifi)
+        } finally {
+            dbHelper.close()
+        }
+        val msg = when (result) {
+            DatabaseUpdater.Result.UPDATED      -> getString(R.string.db_updated)
+            DatabaseUpdater.Result.UP_TO_DATE   -> getString(R.string.db_up_to_date)
+            DatabaseUpdater.Result.NOT_ON_WIFI  -> getString(R.string.not_on_wifi)
+            DatabaseUpdater.Result.FAILED       -> getString(R.string.db_update_failed)
+        }
+        showToast(msg)
+        binding.btnCheckUpdate.text = getString(R.string.btn_check_update)
+        binding.btnCheckUpdate.isEnabled = true
+        if (result == DatabaseUpdater.Result.UPDATED ||
+            result == DatabaseUpdater.Result.UP_TO_DATE) {
+            ServiceState.lastDbCheckMs.value = System.currentTimeMillis()
+        }
+        refreshDatabaseState()
+        return result
+    }
+
+    private fun promptForInitialDatabaseIfMissing() {
+        val missingDatabase = CameraDbHelper(applicationContext).also { it.open() }.let { dbHelper ->
+            try {
+                dbHelper.getCameraCount() == 0
+            } finally {
+                dbHelper.close()
+            }
+        }
+        if (!missingDatabase) {
+            refreshDatabaseState()
+            return
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.db_missing_title))
+            .setMessage(getString(R.string.db_missing_message))
+            .setPositiveButton(getString(R.string.db_missing_download)) { _, _ ->
+                lifecycleScope.launch { runDatabaseUpdate(requireWifi = false) }
+            }
+            .setNegativeButton(getString(R.string.db_missing_later), null)
+            .show()
     }
 
     private fun refreshDatabaseState() {
@@ -276,13 +304,17 @@ class MainActivity : AppCompatActivity() {
 
     // ---- One-time disclaimer ----
 
-    private fun showDisclaimerIfFirst() {
-        if (prefs.getBoolean("disclaimer_shown", false)) return
+    private fun showDisclaimerIfFirst(onDone: () -> Unit) {
+        if (prefs.getBoolean("disclaimer_shown", false)) {
+            onDone()
+            return
+        }
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.disclaimer_title))
             .setMessage(getString(R.string.disclaimer_message))
             .setPositiveButton(getString(R.string.disclaimer_ok)) { _, _ ->
                 prefs.edit().putBoolean("disclaimer_shown", true).apply()
+                onDone()
             }
             .setCancelable(false)
             .show()

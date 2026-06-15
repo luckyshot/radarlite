@@ -23,4 +23,9 @@
     <string name="db_updated">Database updated</string>
     <string name="db_update_failed">Update failed. Try again later.</string>
     <string name="not_on_wifi">Connect to Wi-Fi to update the database</string>
+    <string name="db_missing_title">Download camera database?</string>
+    <string name="db_missing_message">RadarLite needs a camera database before it can alert you.
+        Download it now? (4 MB)</string>
+    <string name="db_missing_download">Download</string>
+    <string name="db_missing_later">Not now</string>
 </resources>

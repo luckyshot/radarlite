@@ -27,8 +27,12 @@ object DatabaseUpdater {
         .readTimeout(120, TimeUnit.SECONDS)
         .build()
 
-    suspend fun checkAndUpdate(context: Context, dbHelper: CameraDbHelper): Result {
-        if (!isOnWifi(context)) return Result.NOT_ON_WIFI
+    suspend fun checkAndUpdate(
+        context: Context,
+        dbHelper: CameraDbHelper,
+        requireWifi: Boolean = true
+    ): Result {
+        if (requireWifi && !isOnWifi(context)) return Result.NOT_ON_WIFI
 
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val lastCheck = prefs.getLong(KEY_LAST_CHECK, 0)
