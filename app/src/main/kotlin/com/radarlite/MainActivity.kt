@@ -196,6 +196,11 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 launch {
+                    ServiceState.closestCameraDistanceM.collect { distance ->
+                        binding.tvClosestCamera.text = formatDistance(distance)
+                    }
+                }
+                launch {
                     ServiceState.gpsMode.collect { mode ->
                         binding.tvGpsMode.text = mode
                     }
@@ -318,6 +323,11 @@ class MainActivity : AppCompatActivity() {
             }
             .setCancelable(false)
             .show()
+    }
+
+    private fun formatDistance(distanceM: Float?): String {
+        if (distanceM == null) return "—"
+        return if (distanceM < 1000f) "${distanceM.toInt()} m" else "%.1f km".format(distanceM / 1000f)
     }
 
     private fun showToast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()

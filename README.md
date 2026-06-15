@@ -92,3 +92,4 @@ RadarLite uses `PRIORITY_PASSIVE` location only. It does not start its own GPS p
 ### 1.0.0
 
 - Initial version
+- Shows the distance to the closest camera found during passive monitoring.

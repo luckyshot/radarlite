@@ -13,6 +13,7 @@ import com.radarlite.db.*
 import com.radarlite.location.LocationState
 import com.radarlite.location.LocationStrategy
 import com.radarlite.update.DatabaseUpdater
+import com.radarlite.util.GeoUtils
 import kotlinx.coroutines.*
 
 class CameraDetectionService : Service() {
@@ -75,6 +76,7 @@ class CameraDetectionService : Service() {
         ServiceState.isRunning.value  = false
         ServiceState.speedKmh.value   = 0f
         ServiceState.camerasNearby.value = 0
+        ServiceState.closestCameraDistanceM.value = null
         ServiceState.gpsMode.value    = "—"
     }
 
@@ -87,6 +89,9 @@ class CameraDetectionService : Service() {
             // update UI state
             ServiceState.speedKmh.value = state.speedKmh
             ServiceState.camerasNearby.value = cameras.size
+            ServiceState.closestCameraDistanceM.value = cameras.minOfOrNull {
+                GeoUtils.haversine(state.lat, state.lon, it.lat, it.lon)
+            }
             ServiceState.gpsMode.value = getString(R.string.gps_passive)
         }
     }

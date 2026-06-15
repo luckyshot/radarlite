@@ -61,6 +61,10 @@
                 <TextView style="@style/RowLabel" android:text="Cameras nearby"/>
                 <TextView android:id="@+id/tvCamerasNear" style="@style/RowValue" android:text="0"/>
             </LinearLayout>
+            <LinearLayout style="@style/StatusRow">
+                <TextView style="@style/RowLabel" android:text="Closest camera"/>
+                <TextView android:id="@+id/tvClosestCamera" style="@style/RowValue" android:text="—"/>
+            </LinearLayout>
         </LinearLayout>
 
         <!-- Database Card -->
