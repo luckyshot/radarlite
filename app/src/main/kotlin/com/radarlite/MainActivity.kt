@@ -104,11 +104,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupSwitch() {
-        binding.switchService.isChecked = prefs.getBoolean("service_enabled", false)
+        val enabled = prefs.getBoolean("service_enabled", false)
+        binding.switchService.isChecked = enabled
         binding.switchService.setOnCheckedChangeListener { _, checked ->
             prefs.edit().putBoolean("service_enabled", checked).apply()
             if (checked) checkPermissionsAndStart() else stopService()
         }
+        // App updates and debug reinstalls can stop the service while preserving this preference.
+        if (enabled) checkPermissionsAndStart()
     }
 
     private fun setupUpdateButton() {
