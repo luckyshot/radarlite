@@ -18,7 +18,7 @@ class SoundManager(context: Context) {
                     delay(130)
                     beep(880f, 90)
                 }
-                AlertStage.URGENT -> beep(660f, 380)
+                AlertStage.URGENT -> beep(1_200f, 650)
             }
         }
     }

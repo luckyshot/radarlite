@@ -17,6 +17,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.Lifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.radarlite.alert.AlertStage
+import com.radarlite.alert.SoundManager
 import com.radarlite.databinding.ActivityMainBinding
 import com.radarlite.db.AppDatabase
 import com.radarlite.db.CameraDbHelper
@@ -31,6 +33,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var adapter: AlertLogAdapter
+    private lateinit var soundManager: SoundManager
     private val prefs by lazy { getSharedPreferences("radarlite_prefs", MODE_PRIVATE) }
 
     // Permission launchers (must be declared before onCreate)
@@ -76,13 +79,20 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        soundManager = SoundManager(this)
 
         setupRecyclerView()
         setupSwitch()
         setupUpdateButton()
+        setupSoundButtons()
         observeServiceState()
         observeAlertLog()
         showDisclaimerIfFirst { promptForInitialDatabaseIfMissing() }
+    }
+
+    override fun onDestroy() {
+        soundManager.release()
+        super.onDestroy()
     }
 
     // ---- Setup ----
@@ -107,6 +117,11 @@ class MainActivity : AppCompatActivity() {
                 runDatabaseUpdate(requireWifi = true)
             }
         }
+    }
+
+    private fun setupSoundButtons() {
+        binding.btnTestWarning.setOnClickListener { soundManager.play(AlertStage.WARNING) }
+        binding.btnTestUrgent.setOnClickListener { soundManager.play(AlertStage.URGENT) }
     }
 
     private suspend fun runDatabaseUpdate(requireWifi: Boolean): DatabaseUpdater.Result {

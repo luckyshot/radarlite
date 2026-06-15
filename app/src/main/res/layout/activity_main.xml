@@ -67,6 +67,36 @@
             </LinearLayout>
         </LinearLayout>
 
+        <!-- Sound Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/card_bg"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView style="@style/SectionLabel" android:text="@string/sound_test_title"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnTestWarning"
+                    style="@style/SoundTestButton"
+                    android:layout_marginEnd="6dp"
+                    android:text="@string/btn_test_warning"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnTestUrgent"
+                    style="@style/SoundTestButton"
+                    android:layout_marginStart="6dp"
+                    android:text="@string/btn_test_urgent"/>
+            </LinearLayout>
+        </LinearLayout>
+
         <!-- Database Card -->
         <LinearLayout
             android:layout_width="match_parent"

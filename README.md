@@ -28,7 +28,7 @@ For a fork, override this without editing Kotlin:
 ./gradlew :app:assembleDebug -Pradarlite.dbVersionUrl=https://github.com/OWNER/REPO/releases/latest/download/version.json
 ```
 
-**Note on sounds:** Audio alerts are generated programmatically via `SoundManager.kt` using `AudioTrack`. No audio files are bundled. The app generates a 880 Hz double-beep for warnings and a 660 Hz single tone for urgent alerts.
+**Note on sounds:** Audio alerts are generated programmatically via `SoundManager.kt` using `AudioTrack`. No audio files are bundled. The app generates a 880 Hz double-beep for warnings and a longer 1200 Hz single tone for urgent alerts.
 
 **Note on database:** The app gracefully handles a missing bundled database by creating an empty schema. Tap "Check for update" on first run to download the full camera database (requires Wi-Fi).
 
@@ -93,3 +93,5 @@ RadarLite uses `PRIORITY_PASSIVE` location only. It does not start its own GPS p
 
 - Initial version
 - Shows the distance to the closest camera found during passive monitoring.
+- Adds warning and urgent sound-test buttons to the main screen.
+- Makes the urgent alert longer and higher pitched than the warning alert.

@@ -15,6 +15,9 @@
     <string name="disclaimer_ok">I understand</string>
     <string name="notification_title">RadarLite</string>
     <string name="notification_text">Monitoring for speed cameras</string>
+    <string name="sound_test_title">SOUND TEST</string>
+    <string name="btn_test_warning">Warning</string>
+    <string name="btn_test_urgent">Urgent</string>
     <string name="perm_rationale_background">Background location is needed so RadarLite can receive
         passive location updates while using Waze, Google Maps, etc. Select Location and Allow all
         the time.</string>
