@@ -97,3 +97,5 @@ RadarLite uses `PRIORITY_PASSIVE` location only. It does not start its own GPS p
 - Makes the urgent alert longer and higher pitched than the warning alert.
 - Says the known speed limit after warning beeps, including the warning sound test.
 - Queues speed-limit speech until Android Text-to-Speech is ready.
+- Says "Red light" instead of a speed limit for red-light camera warnings.
+- Prompts on launch when the camera database has not been checked for 7 days or more.

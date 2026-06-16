@@ -21,6 +21,7 @@ object DatabaseUpdater {
     private const val KEY_LAST_CHECK = "last_db_check_ms"
     private const val KEY_DB_VERSION = "db_version"
     private const val CHECK_INTERVAL = 24 * 60 * 60 * 1000L
+    private const val STALE_INTERVAL = 7 * CHECK_INTERVAL
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
@@ -77,6 +78,12 @@ object DatabaseUpdater {
             }
         }
     }
+
+    fun lastCheckMs(context: Context): Long =
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getLong(KEY_LAST_CHECK, 0)
+
+    fun isStale(context: Context): Boolean =
+        System.currentTimeMillis() - lastCheckMs(context) >= STALE_INTERVAL
 
     private fun fetchVersionInfo(): VersionInfo? {
         val response = client.newCall(Request.Builder().url(BuildConfig.DB_VERSION_URL).build()).execute()

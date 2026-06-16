@@ -38,4 +38,9 @@
         Download it now? (4 MB)</string>
     <string name="db_missing_download">Download</string>
     <string name="db_missing_later">Not now</string>
+    <string name="db_stale_title">Update camera database?</string>
+    <string name="db_stale_message">The camera database has not been checked for 7 days or more.
+        Update it now?</string>
+    <string name="db_stale_update">Update</string>
+    <string name="db_stale_skip">Skip</string>
 </resources>

@@ -164,6 +164,7 @@ class MainActivity : AppCompatActivity() {
         }
         if (!missingDatabase) {
             refreshDatabaseState()
+            promptForStaleDatabaseIfNeeded()
             return
         }
 
@@ -177,11 +178,24 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun promptForStaleDatabaseIfNeeded() {
+        if (!DatabaseUpdater.isStale(this)) return
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.db_stale_title))
+            .setMessage(getString(R.string.db_stale_message))
+            .setPositiveButton(getString(R.string.db_stale_update)) { _, _ ->
+                lifecycleScope.launch { runDatabaseUpdate(requireWifi = true) }
+            }
+            .setNegativeButton(getString(R.string.db_stale_skip), null)
+            .show()
+    }
+
     private fun refreshDatabaseState() {
         val dbHelper = CameraDbHelper(applicationContext).also { it.open() }
         try {
             ServiceState.dbVersion.value = dbHelper.getVersion() ?: getString(R.string.no_database)
             ServiceState.dbCameraCount.value = dbHelper.getCameraCount()
+            ServiceState.lastDbCheckMs.value = DatabaseUpdater.lastCheckMs(this)
         } finally {
             dbHelper.close()
         }
