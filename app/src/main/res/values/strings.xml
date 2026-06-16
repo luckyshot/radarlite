@@ -17,8 +17,8 @@
     <string name="btn_test_urgent">Urgent</string>
     <string name="guide_title">QUICK GUIDE</string>
     <string name="guide_sound">Sounds: warning is 3 short beeps at about 12 seconds, followed by
-        the camera purpose when known, for example "Limit 50" or "Red light". Urgent is 3 longer,
-        higher-pitched beeps at about 4 seconds.</string>
+        the camera purpose when known, for example "Limit 50" or "Red light". Urgent is a single
+        1 second, higher-pitched beep at about 4 seconds.</string>
     <string name="guide_passive">RadarLite only activates when your GPS is actively being used by a
         navigation app. This makes the app very battery efficient but requires you to drive with a
         navigation app active in order to receive alerts.</string>

@@ -45,7 +45,7 @@ class SoundManager(context: Context) {
                 }
                 AlertStage.URGENT  -> {
                     tts?.stop()
-                    burst(freqHz = 1_200f, count = 3, durationMs = 700, gapMs = 120)
+                    beep(freqHz = 1_200f, durationMs = 1000)
                 }
             }
         }
