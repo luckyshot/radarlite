@@ -3,9 +3,7 @@
     <string name="app_name">RadarLite</string>
     <string name="status_monitoring">Monitoring</string>
     <string name="status_stopped">Stopped</string>
-    <string name="status_waiting">Waiting for motion</string>
     <string name="gps_passive">Passive (external GPS only)</string>
-    <string name="gps_none">No fix</string>
     <string name="btn_check_update">Check for update</string>
     <string name="no_database">No database</string>
     <string name="no_alerts">No alerts yet</string>
@@ -14,7 +12,6 @@
         are responsible for checking the laws in your region before use.</string>
     <string name="disclaimer_ok">I understand</string>
     <string name="notification_title">RadarLite</string>
-    <string name="notification_text">Monitoring for speed cameras</string>
     <string name="sound_test_title">SOUND TEST</string>
     <string name="btn_test_warning">Warning</string>
     <string name="btn_test_urgent">Urgent</string>

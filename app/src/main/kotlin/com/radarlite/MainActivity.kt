@@ -123,7 +123,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupSoundButtons() {
-        binding.btnTestWarning.setOnClickListener { soundManager.play(AlertStage.WARNING, speedLimit = 50) }
+        binding.btnTestWarning.setOnClickListener {
+            soundManager.play(AlertStage.WARNING, speedLimit = 50)
+        }
         binding.btnTestUrgent.setOnClickListener { soundManager.play(AlertStage.URGENT) }
     }
 
@@ -179,14 +181,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun promptForStaleDatabaseIfNeeded() {
-        if (!DatabaseUpdater.isStale(this)) return
+        if (!DatabaseUpdater.shouldPromptForStale(this)) return
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.db_stale_title))
             .setMessage(getString(R.string.db_stale_message))
             .setPositiveButton(getString(R.string.db_stale_update)) { _, _ ->
                 lifecycleScope.launch { runDatabaseUpdate(requireWifi = true) }
             }
-            .setNegativeButton(getString(R.string.db_stale_skip), null)
+            .setNegativeButton(getString(R.string.db_stale_skip)) { _, _ ->
+                DatabaseUpdater.markStalePromptShown(this)
+            }
             .show()
     }
 
@@ -309,17 +313,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startService() {
-        val si = Intent(this, CameraDetectionService::class.java).apply {
-            action = CameraDetectionService.ACTION_START
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(si)
-        else startService(si)
+        CameraDetectionService.start(this)
     }
 
     private fun stopService() {
-        startService(Intent(this, CameraDetectionService::class.java).apply {
-            action = CameraDetectionService.ACTION_STOP
-        })
+        CameraDetectionService.start(this, CameraDetectionService.ACTION_STOP)
     }
 
     // ---- Permission checks ----

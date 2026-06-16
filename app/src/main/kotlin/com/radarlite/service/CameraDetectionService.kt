@@ -1,6 +1,7 @@
 package com.radarlite.service
 
 import android.app.*
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
@@ -12,7 +13,6 @@ import com.radarlite.alert.*
 import com.radarlite.db.*
 import com.radarlite.location.LocationState
 import com.radarlite.location.LocationStrategy
-import com.radarlite.update.DatabaseUpdater
 import com.radarlite.util.GeoUtils
 import kotlinx.coroutines.*
 
@@ -23,6 +23,20 @@ class CameraDetectionService : Service() {
         const val ACTION_STOP          = "com.radarlite.STOP"
         const val NOTIFICATION_ID      = 1
         const val CHANNEL_ID           = "radarlite_service"
+
+        fun start(context: Context, action: String = ACTION_START) {
+            val intent = Intent(context, CameraDetectionService::class.java).apply {
+                this.action = action
+            }
+
+            // Starting monitoring must use startForegroundService on Android O+.
+            // Stopping is a normal command and can use startService from the foreground UI.
+            if (action == ACTION_START && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        }
     }
 
     private lateinit var locationStrategy: LocationStrategy
@@ -86,7 +100,7 @@ class CameraDetectionService : Service() {
 
             alertEngine.process(state, cameras)
 
-            // update UI state
+            // Keep the activity's status card in sync with each passive location fix.
             ServiceState.speedKmh.value = state.speedKmh
             ServiceState.camerasNearby.value = cameras.size
             ServiceState.closestCameraDistanceM.value = cameras.minOfOrNull {
@@ -126,17 +140,5 @@ class CameraDetectionService : Service() {
             .setOngoing(true)
             .setSilent(true)
             .build()
-    }
-
-    // Trigger DB update check (called from MainActivity on demand)
-    fun checkDatabaseUpdate() {
-        scope.launch {
-            val result = DatabaseUpdater.checkAndUpdate(applicationContext, cameraDb)
-            if (result == DatabaseUpdater.Result.UPDATED) {
-                ServiceState.dbVersion.value     = cameraDb.getVersion() ?: "unknown"
-                ServiceState.dbCameraCount.value = cameraDb.getCameraCount()
-                ServiceState.lastDbCheckMs.value = System.currentTimeMillis()
-            }
-        }
     }
 }

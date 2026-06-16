@@ -19,6 +19,7 @@ object DatabaseUpdater {
 
     private const val PREFS_NAME  = "radarlite_prefs"
     private const val KEY_LAST_CHECK = "last_db_check_ms"
+    private const val KEY_LAST_STALE_PROMPT = "last_stale_db_prompt_ms"
     private const val KEY_DB_VERSION = "db_version"
     private const val CHECK_INTERVAL = 24 * 60 * 60 * 1000L
     private const val STALE_INTERVAL = 7 * CHECK_INTERVAL
@@ -82,8 +83,22 @@ object DatabaseUpdater {
     fun lastCheckMs(context: Context): Long =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getLong(KEY_LAST_CHECK, 0)
 
-    fun isStale(context: Context): Boolean =
-        System.currentTimeMillis() - lastCheckMs(context) >= STALE_INTERVAL
+    private fun lastStalePromptMs(context: Context): Long =
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getLong(KEY_LAST_STALE_PROMPT, 0)
+
+    fun shouldPromptForStale(context: Context): Boolean {
+        val now = System.currentTimeMillis()
+        return now - lastCheckMs(context) >= STALE_INTERVAL &&
+            now - lastStalePromptMs(context) >= CHECK_INTERVAL
+    }
+
+    fun markStalePromptShown(context: Context) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putLong(KEY_LAST_STALE_PROMPT, System.currentTimeMillis())
+            .apply()
+    }
 
     private fun fetchVersionInfo(): VersionInfo? {
         val response = client.newCall(Request.Builder().url(BuildConfig.DB_VERSION_URL).build()).execute()

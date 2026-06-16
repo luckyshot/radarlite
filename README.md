@@ -28,9 +28,9 @@ For a fork, override this without editing Kotlin:
 ./gradlew :app:assembleDebug -Pradarlite.dbVersionUrl=https://github.com/OWNER/REPO/releases/latest/download/version.json
 ```
 
-**Note on sounds:** Audio alerts are generated programmatically via `SoundManager.kt` using `AudioTrack`. No audio files are bundled. The app generates warning beeps, then says the camera purpose when known (`Limit 50` or `Red light`). Urgent alerts use longer 1200 Hz beeps.
+**Note on sounds:** Audio alerts are generated programmatically via `SoundManager.kt` using `AudioTrack`. No audio files are bundled. Warning alerts play 3 short 880 Hz beeps and then say the camera purpose when known (`Limit 50` or `Red light`). Urgent alerts play 3 long 700 ms, 1200 Hz beeps.
 
-**Note on database:** The app gracefully handles a missing bundled database by creating an empty schema. Tap "Check for update" on first run to download the full camera database (requires Wi-Fi).
+**Note on database:** The app gracefully handles a missing bundled database by creating an empty schema. Tap "Check for update" on first run to download the full camera database (requires Wi-Fi). On launch, RadarLite prompts for an update when the database has not been checked for 7 days or more; choosing Skip suppresses the prompt for 24 hours.
 
 To bundle an initial database, run the pipeline locally once and copy the resulting `cameras.db` (not the .gz) into `app/src/main/assets/cameras.db`.
 
@@ -89,7 +89,12 @@ RadarLite uses `PRIORITY_PASSIVE` location only. It does not start its own GPS p
 
 ## Changelog
 
-### 1.0.0
+### 16 June 2026
+
+- Says "Red light" instead of a speed limit for red-light camera warnings.
+- Prompts on launch when the camera database has not been checked for 7 days or more.
+
+### 15 June 2026
 
 - Initial version
 - Shows the distance to the closest camera found during passive monitoring.
@@ -97,5 +102,3 @@ RadarLite uses `PRIORITY_PASSIVE` location only. It does not start its own GPS p
 - Makes the urgent alert longer and higher pitched than the warning alert.
 - Says the known speed limit after warning beeps, including the warning sound test.
 - Queues speed-limit speech until Android Text-to-Speech is ready.
-- Says "Red light" instead of a speed limit for red-light camera warnings.
-- Prompts on launch when the camera database has not been checked for 7 days or more.
