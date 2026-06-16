@@ -27,6 +27,11 @@ object GeoUtils {
         return if (diff > 180f) 360f - diff else diff
     }
 
+    fun lateralOffset(distanceM: Float, headingDeg: Float, bearingToTargetDeg: Float): Float {
+        val diff = Math.toRadians(angularDifference(headingDeg, bearingToTargetDeg).toDouble())
+        return abs(distanceM * sin(diff)).toFloat()
+    }
+
     // Returns [minLat, maxLat, minLon, maxLon]
     fun boundingBox(lat: Double, lon: Double, radiusM: Float): DoubleArray {
         val latDelta = radiusM / 111_000.0

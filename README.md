@@ -93,6 +93,7 @@ RadarLite uses `PRIORITY_PASSIVE` location only. It does not start its own GPS p
 
 - Says "Red light" instead of a speed limit for red-light camera warnings.
 - Prompts on launch when the camera database has not been checked for 7 days or more.
+- Adds conservative side-offset filtering to reduce alerts from adjacent streets or opposite carriageways.
 
 ### 15 June 2026
 
