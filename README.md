@@ -28,7 +28,7 @@ For a fork, override this without editing Kotlin:
 ./gradlew :app:assembleDebug -Pradarlite.dbVersionUrl=https://github.com/OWNER/REPO/releases/latest/download/version.json
 ```
 
-**Note on sounds:** Audio alerts are generated programmatically via `SoundManager.kt` using `AudioTrack`. No audio files are bundled. The app generates a 880 Hz double-beep for warnings and a longer 1200 Hz single tone for urgent alerts.
+**Note on sounds:** Audio alerts are generated programmatically via `SoundManager.kt` using `AudioTrack`. No audio files are bundled. The app generates warning beeps, then says the camera purpose when known (`Limit 50` or `Red light`). Urgent alerts use longer 1200 Hz beeps.
 
 **Note on database:** The app gracefully handles a missing bundled database by creating an empty schema. Tap "Check for update" on first run to download the full camera database (requires Wi-Fi).
 

@@ -35,13 +35,13 @@ class SoundManager(context: Context) {
         }
     }
 
-    fun play(stage: AlertStage, speedLimit: Int? = null) {
+    fun play(stage: AlertStage, speedLimit: Int? = null, cameraType: String? = null) {
         if (audioManager.ringerMode == AudioManager.RINGER_MODE_SILENT) return
         scope.launch {
             when (stage) {
                 AlertStage.WARNING -> {
                     burst(freqHz = 880f, count = 3, durationMs = 90, gapMs = 220)
-                    speedLimit?.let { speak("Limit $it") }
+                    warningPhrase(speedLimit, cameraType)?.let { speak(it) }
                 }
                 AlertStage.URGENT  -> {
                     tts?.stop()
@@ -49,6 +49,11 @@ class SoundManager(context: Context) {
                 }
             }
         }
+    }
+
+    private fun warningPhrase(speedLimit: Int?, cameraType: String?): String? = when (cameraType) {
+        "red_light" -> "Red light"
+        else        -> speedLimit?.let { "Limit $it" }
     }
 
     // One alert burst is intentionally short so repeated bursts are easy to count.

@@ -42,7 +42,11 @@ class AlertEngine(
             // only alert if new or escalating from WARNING -> URGENT
             if (last == null || (target == AlertStage.URGENT && last == AlertStage.WARNING)) {
                 alerted[cam.id] = target
-                soundManager.play(target, speedLimit = if (target == AlertStage.WARNING) cam.speedLimit else null)
+                soundManager.play(
+                    target,
+                    speedLimit = if (target == AlertStage.WARNING) cam.speedLimit else null,
+                    cameraType = if (target == AlertStage.WARNING) cam.type else null
+                )
                 onAlert(cam, target)
             }
         }
