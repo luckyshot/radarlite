@@ -5,5 +5,6 @@ data class LocationState(
     val lon: Double,
     val speedKmh: Float,
     val bearingDeg: Float,
-    val accuracyM: Float
+    val accuracyM: Float,
+    val timeMs: Long
 )

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">RadarLite</string>
-    <string name="status_monitoring">Monitoring</string>
+    <string name="status_idle">Idle (Battery saving)</string>
+    <string name="status_gathering">Engaged</string>
     <string name="status_stopped">Stopped</string>
     <string name="gps_passive">Passive (external GPS only)</string>
     <string name="btn_check_update">Check for update</string>

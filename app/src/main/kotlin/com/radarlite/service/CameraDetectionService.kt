@@ -46,6 +46,7 @@ class CameraDetectionService : Service() {
     private lateinit var appDb: AppDatabase
 
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private var locationIdleJob: Job? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -81,13 +82,21 @@ class CameraDetectionService : Service() {
         startForeground(NOTIFICATION_ID, buildNotification("Passive standby"))
         locationStrategy.start()
         ServiceState.isRunning.value = true
+        ServiceState.isReceivingLocation.value = false
         ServiceState.gpsMode.value   = getString(R.string.gps_passive)
     }
 
     private fun stopMonitoring() {
         locationStrategy.stop()
+        locationIdleJob?.cancel()
         alertEngine.reset()
         ServiceState.isRunning.value  = false
+        ServiceState.isReceivingLocation.value = false
+        ServiceState.lastLat.value = null
+        ServiceState.lastLon.value = null
+        ServiceState.bearingDeg.value = null
+        ServiceState.accuracyM.value = null
+        ServiceState.lastFixMs.value = null
         ServiceState.speedKmh.value   = 0f
         ServiceState.camerasNearby.value = 0
         ServiceState.closestCameraDistanceM.value = null
@@ -95,18 +104,34 @@ class CameraDetectionService : Service() {
     }
 
     private fun onLocationUpdate(state: LocationState) {
+        markLocationActive()
         scope.launch {
             val cameras = cameraDb.getCamerasNear(state.lat, state.lon, 600f)
 
             alertEngine.process(state, cameras)
 
             // Keep the activity's status card in sync with each passive location fix.
+            ServiceState.lastLat.value = state.lat
+            ServiceState.lastLon.value = state.lon
+            ServiceState.bearingDeg.value = state.bearingDeg
+            ServiceState.accuracyM.value = state.accuracyM
+            ServiceState.lastFixMs.value = state.timeMs
             ServiceState.speedKmh.value = state.speedKmh
             ServiceState.camerasNearby.value = cameras.size
             ServiceState.closestCameraDistanceM.value = cameras.minOfOrNull {
                 GeoUtils.haversine(state.lat, state.lon, it.lat, it.lon)
             }
             ServiceState.gpsMode.value = getString(R.string.gps_passive)
+        }
+    }
+
+    private fun markLocationActive() {
+        ServiceState.isReceivingLocation.value = true
+        locationIdleJob?.cancel()
+        // No polling: this one-shot timeout marks the service idle after passive fixes stop.
+        locationIdleJob = scope.launch {
+            delay(15_000)
+            ServiceState.isReceivingLocation.value = false
         }
     }
 

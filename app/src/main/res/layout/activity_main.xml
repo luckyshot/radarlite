@@ -59,6 +59,22 @@
                 <TextView android:id="@+id/tvSpeed" style="@style/RowValue" android:text="—" />
             </LinearLayout>
             <LinearLayout style="@style/StatusRow">
+                <TextView style="@style/RowLabel" android:text="Heading" />
+                <TextView android:id="@+id/tvHeading" style="@style/RowValue" android:text="—" />
+            </LinearLayout>
+            <LinearLayout style="@style/StatusRow">
+                <TextView style="@style/RowLabel" android:text="Accuracy" />
+                <TextView android:id="@+id/tvAccuracy" style="@style/RowValue" android:text="—" />
+            </LinearLayout>
+            <LinearLayout style="@style/StatusRow">
+                <TextView style="@style/RowLabel" android:text="Last fix" />
+                <TextView android:id="@+id/tvLastFix" style="@style/RowValue" android:text="—" />
+            </LinearLayout>
+            <LinearLayout style="@style/StatusRow">
+                <TextView style="@style/RowLabel" android:text="Fix time" />
+                <TextView android:id="@+id/tvFixTime" style="@style/RowValue" android:text="—" />
+            </LinearLayout>
+            <LinearLayout style="@style/StatusRow">
                 <TextView style="@style/RowLabel" android:text="Cameras nearby" />
                 <TextView android:id="@+id/tvCamerasNear" style="@style/RowValue" android:text="0" />
             </LinearLayout>

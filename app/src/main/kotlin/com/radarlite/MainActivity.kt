@@ -1,6 +1,7 @@
 package com.radarlite
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -25,6 +26,7 @@ import com.radarlite.db.CameraDbHelper
 import com.radarlite.service.CameraDetectionService
 import com.radarlite.ui.AlertLogAdapter
 import com.radarlite.update.DatabaseUpdater
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -85,6 +87,7 @@ class MainActivity : AppCompatActivity() {
         setupSwitch()
         setupUpdateButton()
         setupSoundButtons()
+        setupLastFixLink()
         observeServiceState()
         observeAlertLog()
         showDisclaimerIfFirst { promptForInitialDatabaseIfMissing() }
@@ -127,6 +130,10 @@ class MainActivity : AppCompatActivity() {
             soundManager.play(AlertStage.WARNING, speedLimit = 50)
         }
         binding.btnTestUrgent.setOnClickListener { soundManager.play(AlertStage.URGENT) }
+    }
+
+    private fun setupLastFixLink() {
+        binding.tvLastFix.setOnClickListener { openLastFixInMaps() }
     }
 
     private suspend fun runDatabaseUpdate(requireWifi: Boolean): DatabaseUpdater.Result {
@@ -211,19 +218,50 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    ServiceState.isRunning.collect { running ->
-                        binding.tvServiceStatus.text = if (running)
-                            getString(R.string.status_monitoring)
-                        else getString(R.string.status_stopped)
+                    combine(ServiceState.isRunning, ServiceState.isReceivingLocation) { running, receiving ->
+                        running to receiving
+                    }.collect { (running, receiving) ->
+                        binding.tvServiceStatus.text = when {
+                            !running  -> getString(R.string.status_stopped)
+                            receiving -> getString(R.string.status_gathering)
+                            else      -> getString(R.string.status_idle)
+                        }
                         binding.tvServiceStatus.setTextColor(
                             ContextCompat.getColor(this@MainActivity,
-                                if (running) R.color.status_active else R.color.text_primary)
+                                if (running && receiving) R.color.status_active else R.color.text_primary)
                         )
                     }
                 }
                 launch {
                     ServiceState.speedKmh.collect { speed ->
                         binding.tvSpeed.text = if (speed > 0) "${speed.toInt()} km/h" else "—"
+                    }
+                }
+                launch {
+                    ServiceState.bearingDeg.collect { bearing ->
+                        binding.tvHeading.text = formatHeading(bearing)
+                    }
+                }
+                launch {
+                    ServiceState.accuracyM.collect { accuracy ->
+                        binding.tvAccuracy.text = accuracy?.let { "${it.toInt()} m" } ?: "—"
+                    }
+                }
+                launch {
+                    combine(ServiceState.lastLat, ServiceState.lastLon) { lat, lon ->
+                        lat to lon
+                    }.collect { (lat, lon) ->
+                        binding.tvLastFix.text = formatCoordinates(lat, lon)
+                        binding.tvLastFix.isEnabled = lat != null && lon != null
+                        binding.tvLastFix.setTextColor(ContextCompat.getColor(
+                            this@MainActivity,
+                            if (lat != null && lon != null) R.color.accent else R.color.text_primary
+                        ))
+                    }
+                }
+                launch {
+                    ServiceState.lastFixMs.collect { ms ->
+                        binding.tvFixTime.text = formatFixTime(ms)
                     }
                 }
                 launch {
@@ -358,6 +396,32 @@ class MainActivity : AppCompatActivity() {
     private fun formatDistance(distanceM: Float?): String {
         if (distanceM == null) return "—"
         return if (distanceM < 1000f) "${distanceM.toInt()} m" else "%.1f km".format(distanceM / 1000f)
+    }
+
+    private fun formatHeading(bearing: Float?): String {
+        if (bearing == null) return "—"
+        val names = arrayOf("N", "NE", "E", "SE", "S", "SW", "W", "NW")
+        val index = (((bearing + 22.5f) / 45f).toInt() % names.size)
+        return "${names[index]} ${bearing.toInt()}°"
+    }
+
+    private fun formatCoordinates(lat: Double?, lon: Double?): String =
+        if (lat == null || lon == null) "—" else "%.5f, %.5f".format(lat, lon)
+
+    private fun formatFixTime(ms: Long?): String =
+        ms?.let { SimpleDateFormat("dd MMM HH:mm:ss", Locale.getDefault()).format(Date(it)) } ?: "—"
+
+    private fun openLastFixInMaps() {
+        val lat = ServiceState.lastLat.value ?: return
+        val lon = ServiceState.lastLon.value ?: return
+        // geo with q drops a pin in the user's default map/navigation app.
+        val uri = Uri.parse("geo:0,0?q=$lat,$lon(${Uri.encode("RadarLite last fix")})")
+        val intent = Intent(Intent.ACTION_VIEW, uri)
+        try {
+            startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            showToast("No map app available")
+        }
     }
 
     private fun showToast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()

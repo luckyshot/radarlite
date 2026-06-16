@@ -20,7 +20,8 @@ class LocationStrategy(
                         lon = loc.longitude,
                         speedKmh = (loc.speed * 3.6f).coerceAtLeast(0f),
                         bearingDeg = loc.bearing,
-                        accuracyM = loc.accuracy
+                        accuracyM = loc.accuracy,
+                        timeMs = loc.time
                     )
                 )
             }
