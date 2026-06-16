@@ -38,7 +38,8 @@ class LocationStrategy(
 
     private fun buildRequest(): LocationRequest =
         LocationRequest.Builder(Priority.PRIORITY_PASSIVE, Long.MAX_VALUE)
-            .setMinUpdateIntervalMillis(5_000)
-            .setMinUpdateDistanceMeters(30f)
+            // Passive keeps GPS owned by other apps; these gates only accept fresh navigation fixes sooner.
+            .setMinUpdateIntervalMillis(1_000)
+            .setMinUpdateDistanceMeters(10f)
             .build()
 }
