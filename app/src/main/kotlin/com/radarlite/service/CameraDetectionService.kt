@@ -23,6 +23,7 @@ class CameraDetectionService : Service() {
         const val ACTION_STOP          = "com.radarlite.STOP"
         const val NOTIFICATION_ID      = 1
         const val CHANNEL_ID           = "radarlite_service"
+        private const val MAX_PASSIVE_FIX_AGE_MS = 30_000L
 
         fun start(context: Context, action: String = ACTION_START) {
             val intent = Intent(context, CameraDetectionService::class.java).apply {
@@ -47,6 +48,8 @@ class CameraDetectionService : Service() {
 
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var locationIdleJob: Job? = null
+    private var notificationStatus: String? = null
+    private var monitoring = false
 
     override fun onCreate() {
         super.onCreate()
@@ -79,14 +82,25 @@ class CameraDetectionService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun startMonitoring() {
-        startForeground(NOTIFICATION_ID, buildNotification("Passive standby"))
-        locationStrategy.start()
+        if (monitoring) {
+            updateNotificationStatus(currentNotificationStatus())
+            return
+        }
+
+        monitoring = true
         ServiceState.isRunning.value = true
         ServiceState.isReceivingLocation.value = false
         ServiceState.gpsMode.value   = getString(R.string.gps_passive)
+
+        val status = currentNotificationStatus()
+        notificationStatus = status
+        startForeground(NOTIFICATION_ID, buildNotification(status))
+        locationStrategy.start()
     }
 
     private fun stopMonitoring() {
+        if (!monitoring && notificationStatus == null) return
+        monitoring = false
         locationStrategy.stop()
         locationIdleJob?.cancel()
         alertEngine.reset()
@@ -101,11 +115,15 @@ class CameraDetectionService : Service() {
         ServiceState.camerasNearby.value = 0
         ServiceState.closestCameraDistanceM.value = null
         ServiceState.gpsMode.value    = "—"
+        notificationStatus = null
     }
 
     private fun onLocationUpdate(state: LocationState) {
+        if (!monitoring) return
+        if (!isFreshFix(state)) return
         markLocationActive()
         scope.launch {
+            if (!monitoring) return@launch
             val cameras = cameraDb.getCamerasNear(state.lat, state.lon, 600f)
 
             alertEngine.process(state, cameras)
@@ -125,13 +143,20 @@ class CameraDetectionService : Service() {
         }
     }
 
+    private fun isFreshFix(state: LocationState): Boolean =
+        state.timeMs > 0 && System.currentTimeMillis() - state.timeMs <= MAX_PASSIVE_FIX_AGE_MS
+
     private fun markLocationActive() {
+        if (!monitoring) return
         ServiceState.isReceivingLocation.value = true
+        updateNotificationStatus(currentNotificationStatus())
         locationIdleJob?.cancel()
         // No polling: this one-shot timeout marks the service idle after passive fixes stop.
         locationIdleJob = scope.launch {
             delay(15_000)
+            if (!monitoring) return@launch
             ServiceState.isReceivingLocation.value = false
+            updateNotificationStatus(currentNotificationStatus())
         }
     }
 
@@ -141,14 +166,29 @@ class CameraDetectionService : Service() {
                 cameraId    = cam.id,
                 speedKmh    = ServiceState.speedKmh.value,
                 speedLimit  = cam.speedLimit,
-                cameraType  = cam.type
+                cameraType  = cam.type,
+                cameraLat   = cam.lat,
+                cameraLon   = cam.lon
             ))
             val cutoff = System.currentTimeMillis() - 7 * 24 * 3600 * 1000L
             appDb.alertLogDao().deleteOlderThan(cutoff)
+            appDb.alertLogDao().keepLatest(200)
         }
     }
 
     // ---- Notification ----
+
+    private fun currentNotificationStatus(): String =
+        getString(if (ServiceState.isReceivingLocation.value)
+            R.string.status_gathering else R.string.notification_status_idle)
+
+    private fun updateNotificationStatus(status: String) {
+        if (!monitoring) return
+        if (notificationStatus == status) return
+        notificationStatus = status
+        getSystemService(NotificationManager::class.java)
+            .notify(NOTIFICATION_ID, buildNotification(status))
+    }
 
     private fun buildNotification(status: String): Notification {
         val tapIntent = PendingIntent.getActivity(
@@ -160,7 +200,7 @@ class CameraDetectionService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.notification_title))
             .setContentText(status)
-            .setSmallIcon(android.R.drawable.ic_menu_compass)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentIntent(tapIntent)
             .setOngoing(true)
             .setSilent(true)

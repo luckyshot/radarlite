@@ -8,7 +8,9 @@ import com.radarlite.db.AlertLogEntry
 import java.text.SimpleDateFormat
 import java.util.*
 
-class AlertLogAdapter : RecyclerView.Adapter<AlertLogAdapter.VH>() {
+class AlertLogAdapter(
+    private val onClick: (AlertLogEntry) -> Unit
+) : RecyclerView.Adapter<AlertLogAdapter.VH>() {
     private var items: List<AlertLogEntry> = emptyList()
 
     class VH(view: View) : RecyclerView.ViewHolder(view) {
@@ -25,12 +27,10 @@ class AlertLogAdapter : RecyclerView.Adapter<AlertLogAdapter.VH>() {
     override fun onBindViewHolder(holder: VH, position: Int) {
         val entry = items[position]
         holder.time.text  = formatTime(entry.timestamp)
-        holder.info.text  = when (entry.cameraType) {
-            "red_light"     -> "Red light camera"
-            "average_speed" -> "Average speed zone"
-            else            -> "Speed camera"
-        }
-        holder.speed.text = entry.speedLimit?.let { "$it km/h" } ?: ""
+        holder.info.text  = formatType(entry)
+        holder.speed.text = entry.speedLimit?.let { "Limit $it" } ?: ""
+        holder.itemView.isEnabled = entry.cameraLat != null && entry.cameraLon != null
+        holder.itemView.setOnClickListener { if (holder.itemView.isEnabled) onClick(entry) }
     }
 
     fun submit(list: List<AlertLogEntry>) {
@@ -46,5 +46,11 @@ class AlertLogAdapter : RecyclerView.Adapter<AlertLogAdapter.VH>() {
             diff < 86_400_000 -> SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(ts))
             else              -> SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date(ts))
         }
+    }
+
+    private fun formatType(entry: AlertLogEntry): String = when (entry.cameraType) {
+        "red_light"     -> "Red light"
+        "average_speed" -> "Average speed zone"
+        else            -> "Speed limit"
     }
 }

@@ -1,6 +1,8 @@
 # RadarLite
 
-Lightweight Android speed camera warning app. No ads. No analytics SDK. No navigation. RadarLite passively listens for location updates produced by other apps and alerts when an OpenStreetMap speed-camera record appears ahead.
+Lightweight Android speed camera warning app. All features are free, with no ads, subscriptions, analytics SDK, user tracking, or navigation. RadarLite passively listens for location updates produced by other apps and alerts when an OpenStreetMap speed-camera record appears ahead. Once the camera database is installed, monitoring works offline and uses no mobile data while you drive.
+
+RadarLite is free and open source. Store listing assets and Play review notes live in `store-assets/`. The public GitHub Pages site lives in `docs/`.
 
 ## Status
 
@@ -10,7 +12,7 @@ RadarLite is early-stage software. Validate the generated camera database and lo
 
 ### Android App
 
-1. Install Android Studio with Android SDK 34
+1. Install Android Studio with Android SDK 36. RadarLite targets Android 15 / API 35 for Play submission and compiles with the locally installed API 36 SDK.
 2. Sync Gradle
 3. Build and install on device
 4. On first launch, grant the requested permissions. Background location is required for monitoring while the screen is off.
@@ -28,7 +30,7 @@ For a fork, override this without editing Kotlin:
 ./gradlew :app:assembleDebug -Pradarlite.dbVersionUrl=https://github.com/OWNER/REPO/releases/latest/download/version.json
 ```
 
-**Note on sounds:** Audio alerts are generated programmatically via `SoundManager.kt` using `AudioTrack`. No audio files are bundled. Warning alerts play 3 short 880 Hz beeps and then say the camera purpose when known (`Limit 50` or `Red light`). Urgent alerts play a single 1 second, 1200 Hz beep.
+**Note on sounds:** Audio alerts are generated programmatically via `SoundManager.kt` using `AudioTrack`. No audio files are bundled. Warning alerts play 3 short 880 Hz beeps and then say a short phrase twice (`Speed limit 50, Speed limit 50`, `Red light, Red light`, or `Average speed zone 50, Average speed zone 50`). Urgent alerts play a single 1 second, 1200 Hz beep.
 
 **Note on database:** The app gracefully handles a missing bundled database by creating an empty schema. Tap "Check for update" on first run to download the full camera database (requires Wi-Fi). On launch, RadarLite prompts for an update when the database has not been checked for 7 days or more; choosing Skip suppresses the prompt for 24 hours.
 
@@ -55,6 +57,8 @@ npm run all
 
 Data is merged with a 25m spatial deduplication radius.
 
+Camera data is derived from OpenStreetMap and must credit OpenStreetMap under the Open Data Commons Open Database License. See `https://www.openstreetmap.org/copyright`.
+
 ## Legal
 
 Speed camera warning apps are illegal or restricted in some countries and regions. You are responsible for checking local laws before use. The app shows a disclaimer on first launch.
@@ -65,7 +69,9 @@ RadarLite is licensed under the GNU Affero General Public License v3.0 or later.
 
 ## Privacy
 
-RadarLite does not include ads, analytics, crash reporting, or a tracking SDK. Location data is processed on device for camera detection. The app makes network requests only when checking/downloading the camera database from GitHub Releases.
+RadarLite does not include ads, subscriptions, analytics, crash reporting, user tracking, or a tracking SDK. Location data is processed on device for camera detection. The app makes network requests only when checking/downloading the camera database from GitHub Releases; normal monitoring works offline and does not use mobile data.
+
+The public privacy policy is hosted through GitHub Pages at `https://luckyshot.github.io/radarlite/privacy.html`.
 
 ## Architecture
 
@@ -86,20 +92,3 @@ ServiceState (StateFlow)    — shared state observable from MainActivity
 ## Battery impact
 
 RadarLite uses `PRIORITY_PASSIVE` location only. It does not start its own GPS polling, including when driving or near a camera. In practice, it works when another app or the system is already producing location fixes, such as a navigation app running in the foreground. If no external location fixes are produced, RadarLite stays idle and will not alert.
-
-## Changelog
-
-### 16 June 2026
-
-- Says "Red light" instead of a speed limit for red-light camera warnings.
-- Prompts on launch when the camera database has not been checked for 7 days or more.
-- Adds conservative side-offset filtering to reduce alerts from adjacent streets or opposite carriageways.
-
-### 15 June 2026
-
-- Initial version
-- Shows the distance to the closest camera found during passive monitoring.
-- Adds warning and urgent sound-test buttons to the main screen.
-- Makes the urgent alert a single longer, higher-pitched beep.
-- Says the known speed limit after warning beeps, including the warning sound test.
-- Queues speed-limit speech until Android Text-to-Speech is ready.

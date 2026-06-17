@@ -22,6 +22,7 @@ import com.radarlite.alert.AlertStage
 import com.radarlite.alert.SoundManager
 import com.radarlite.databinding.ActivityMainBinding
 import com.radarlite.db.AppDatabase
+import com.radarlite.db.AlertLogEntry
 import com.radarlite.db.CameraDbHelper
 import com.radarlite.service.CameraDetectionService
 import com.radarlite.ui.AlertLogAdapter
@@ -55,7 +56,7 @@ class MainActivity : AppCompatActivity() {
     ) { granted ->
         if (granted) requestPostNotifications()
         else {
-            showToast("Background location required — select \"Allow all the time\" in Settings")
+            showToast(getString(R.string.perm_bg_required))
             binding.switchService.isChecked = false
         }
     }
@@ -66,7 +67,7 @@ class MainActivity : AppCompatActivity() {
         if (!binding.switchService.isChecked) return@registerForActivityResult
         if (hasBgLocation()) requestPostNotifications()
         else {
-            showToast("Background location required")
+            showToast(getString(R.string.perm_bg_required))
             binding.switchService.isChecked = false
         }
     }
@@ -88,6 +89,7 @@ class MainActivity : AppCompatActivity() {
         setupUpdateButton()
         setupSoundButtons()
         setupLastFixLink()
+        setupAboutLinks()
         observeServiceState()
         observeAlertLog()
         showDisclaimerIfFirst { promptForInitialDatabaseIfMissing() }
@@ -101,7 +103,7 @@ class MainActivity : AppCompatActivity() {
     // ---- Setup ----
 
     private fun setupRecyclerView() {
-        adapter = AlertLogAdapter()
+        adapter = AlertLogAdapter { openAlertInMaps(it) }
         binding.rvAlerts.layoutManager = LinearLayoutManager(this)
         binding.rvAlerts.adapter = adapter
     }
@@ -134,6 +136,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupLastFixLink() {
         binding.tvLastFix.setOnClickListener { openLastFixInMaps() }
+    }
+
+    private fun setupAboutLinks() {
+        binding.tvPrivacy.setOnClickListener { openExternal(getString(R.string.url_privacy), R.string.no_browser) }
+        binding.tvSource.setOnClickListener { openExternal(getString(R.string.url_source), R.string.no_browser) }
+        binding.tvOsm.setOnClickListener { openExternal(getString(R.string.url_osm), R.string.no_browser) }
     }
 
     private suspend fun runDatabaseUpdate(requireWifi: Boolean): DatabaseUpdater.Result {
@@ -226,6 +234,11 @@ class MainActivity : AppCompatActivity() {
                             receiving -> getString(R.string.status_gathering)
                             else      -> getString(R.string.status_idle)
                         }
+                        binding.tvServiceStatus.setBackgroundResource(when {
+                            !running  -> R.drawable.badge_status_stopped
+                            receiving -> R.drawable.badge_status_active
+                            else      -> R.drawable.badge_status_idle
+                        })
                         binding.tvServiceStatus.setTextColor(
                             ContextCompat.getColor(this@MainActivity,
                                 if (running && receiving) R.color.status_active else R.color.text_primary)
@@ -328,16 +341,16 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) { requestPostNotifications(); return }
         if (hasBgLocation()) { requestPostNotifications(); return }
         AlertDialog.Builder(this)
-            .setTitle("Background location needed")
-            .setMessage(getString(R.string.perm_rationale_background))
-            .setPositiveButton("Open Settings") { _, _ ->
+            .setTitle(getString(R.string.perm_bg_title))
+            .setMessage(getString(R.string.perm_bg_message))
+            .setPositiveButton(getString(R.string.perm_bg_open_settings)) { _, _ ->
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     openAppSettings.launch(appLocationSettingsIntent())
                 } else {
                     requestBgLocation.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
                 }
             }
-            .setNegativeButton("Cancel") { _, _ -> binding.switchService.isChecked = false }
+            .setNegativeButton(getString(R.string.cancel)) { _, _ -> binding.switchService.isChecked = false }
             .show()
     }
 
@@ -416,11 +429,32 @@ class MainActivity : AppCompatActivity() {
         val lon = ServiceState.lastLon.value ?: return
         // geo with q drops a pin in the user's default map/navigation app.
         val uri = Uri.parse("geo:0,0?q=$lat,$lon(${Uri.encode("RadarLite last fix")})")
-        val intent = Intent(Intent.ACTION_VIEW, uri)
+        openExternal(uri, R.string.no_map_app)
+    }
+
+    private fun openAlertInMaps(entry: AlertLogEntry) {
+        val lat = entry.cameraLat ?: return
+        val lon = entry.cameraLon ?: return
+        val uri = Uri.parse("geo:0,0?q=$lat,$lon(${Uri.encode(alertMapLabel(entry))})")
+        openExternal(uri, R.string.no_map_app)
+    }
+
+    private fun alertMapLabel(entry: AlertLogEntry): String {
+        val type = when (entry.cameraType) {
+            "red_light"     -> "Red light"
+            "average_speed" -> "Average speed zone"
+            else            -> "Speed limit"
+        }
+        return entry.speedLimit?.let { "$type $it" } ?: type
+    }
+
+    private fun openExternal(url: String, fallbackRes: Int) = openExternal(Uri.parse(url), fallbackRes)
+
+    private fun openExternal(uri: Uri, fallbackRes: Int) {
         try {
-            startActivity(intent)
+            startActivity(Intent(Intent.ACTION_VIEW, uri))
         } catch (e: ActivityNotFoundException) {
-            showToast("No map app available")
+            showToast(getString(fallbackRes))
         }
     }
 

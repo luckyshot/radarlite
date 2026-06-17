@@ -33,7 +33,7 @@ class AlertEngine(
             if (!isApproaching(state, cam, history)) continue
 
             val alertDist = alertDistance(state.speedKmh, cam.speedLimit)
-            val urgentDist = alertDist * 0.35f
+            val urgentDist = urgentDistance(alertDist, state.speedKmh, cam.speedLimit)
 
             val target = when {
                 dist <= urgentDist -> AlertStage.URGENT
@@ -121,6 +121,11 @@ class AlertEngine(
     private fun alertDistance(speedKmh: Float, limitKmh: Int?): Float {
         val ref = limitKmh?.toFloat() ?: speedKmh
         return (ref * 3.5f).coerceIn(120f, 600f)
+    }
+
+    private fun urgentDistance(alertDistanceM: Float, speedKmh: Float, limitKmh: Int?): Float {
+        val urban = (limitKmh ?: speedKmh.toInt()) <= 50
+        return (alertDistanceM * 0.35f).coerceAtLeast(if (urban) 65f else 45f)
     }
 
     fun reset() {

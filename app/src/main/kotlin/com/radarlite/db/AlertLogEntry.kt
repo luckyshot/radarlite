@@ -10,5 +10,7 @@ data class AlertLogEntry(
     val cameraId: Long?,
     val speedKmh: Float?,
     val speedLimit: Int?,
-    val cameraType: String = "speed"
+    val cameraType: String = "speed",
+    val cameraLat: Double? = null,
+    val cameraLon: Double? = null
 )

@@ -14,4 +14,12 @@ interface AlertLogDao {
 
     @Query("DELETE FROM alert_log WHERE timestamp < :cutoff")
     suspend fun deleteOlderThan(cutoff: Long)
+
+    @Query("""
+        DELETE FROM alert_log
+        WHERE id NOT IN (
+            SELECT id FROM alert_log ORDER BY timestamp DESC, id DESC LIMIT :maxEntries
+        )
+    """)
+    suspend fun keepLatest(maxEntries: Int)
 }

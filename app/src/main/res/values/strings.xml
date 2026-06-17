@@ -4,6 +4,7 @@
     <string name="status_idle">Idle (Battery saving)</string>
     <string name="status_gathering">Engaged</string>
     <string name="status_stopped">Stopped</string>
+    <string name="notification_status_idle">Idle</string>
     <string name="gps_passive">Passive (external GPS only)</string>
     <string name="btn_check_update">Check for update</string>
     <string name="no_database">No database</string>
@@ -18,19 +19,34 @@
     <string name="btn_test_urgent">Urgent</string>
     <string name="guide_title">QUICK GUIDE</string>
     <string name="guide_sound">Sounds: warning is 3 short beeps at about 12 seconds, followed by
-        the camera purpose when known, for example "Limit 50" or "Red light". Urgent is a single
-        1 second, higher-pitched beep at about 4 seconds.</string>
+        a short phrase repeated twice, for example "Speed limit 50, Speed limit 50", "Red light,
+        Red light", or "Average speed zone 50, Average speed zone 50". Urgent is a single 1
+        second, higher-pitched beep closer to the camera, with extra margin in urban speed
+        limits.</string>
     <string name="guide_passive">RadarLite only activates when your GPS is actively being used by a
         navigation app. This makes the app very battery efficient but requires you to drive with a
         navigation app active in order to receive alerts.</string>
-    <string name="perm_rationale_background">Background location is needed so RadarLite can receive
-        passive location updates while using Waze, Google Maps, etc. Select Location and Allow all
-        the time.</string>
+    <string name="about_title">ABOUT</string>
+    <string name="about_privacy">Privacy policy</string>
+    <string name="about_source">Source code</string>
+    <string name="about_data">Camera data: OpenStreetMap</string>
+    <string name="url_privacy">https://luckyshot.github.io/radarlite/privacy.html</string>
+    <string name="url_source">https://github.com/luckyshot/radarlite</string>
+    <string name="url_osm">https://www.openstreetmap.org/copyright</string>
+    <string name="perm_bg_required">Background location required</string>
+    <string name="perm_bg_title">Background location needed</string>
+    <string name="perm_bg_open_settings">Open Settings</string>
+    <string name="cancel">Cancel</string>
+    <string name="perm_bg_message">RadarLite accesses location in the background to detect nearby
+        speed cameras and show alerts even when the app is closed or not in use. Your location stays
+        on your device and is not shared. Select Location and Allow all the time.</string>
     <string name="updating_db">Checking for database update…</string>
     <string name="db_up_to_date">Database is up to date</string>
     <string name="db_updated">Database updated</string>
     <string name="db_update_failed">Update failed. Try again later.</string>
     <string name="not_on_wifi">Connect to Wi-Fi to update the database</string>
+    <string name="no_browser">No browser available</string>
+    <string name="no_map_app">No map app available</string>
     <string name="db_missing_title">Download camera database?</string>
     <string name="db_missing_message">RadarLite needs a camera database before it can alert you.
         Download it now? (4 MB)</string>

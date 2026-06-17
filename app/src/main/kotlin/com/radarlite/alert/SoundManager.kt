@@ -41,7 +41,7 @@ class SoundManager(context: Context) {
             when (stage) {
                 AlertStage.WARNING -> {
                     burst(freqHz = 880f, count = 3, durationMs = 90, gapMs = 220)
-                    warningPhrase(speedLimit, cameraType)?.let { speak(it) }
+                    warningPhrase(speedLimit, cameraType)?.let { speak(repeatPhrase(it)) }
                 }
                 AlertStage.URGENT  -> {
                     tts?.stop()
@@ -52,9 +52,12 @@ class SoundManager(context: Context) {
     }
 
     private fun warningPhrase(speedLimit: Int?, cameraType: String?): String? = when (cameraType) {
-        "red_light" -> "Red light"
-        else        -> speedLimit?.let { "Limit $it" }
+        "red_light"     -> "Red light"
+        "average_speed" -> speedLimit?.let { "Average speed zone $it" } ?: "Average speed zone"
+        else            -> speedLimit?.let { "Speed limit $it" } ?: "Speed limit"
     }
+
+    private fun repeatPhrase(text: String) = "$text, $text"
 
     // One alert burst is intentionally short so repeated bursts are easy to count.
     private suspend fun burst(freqHz: Float, count: Int, durationMs: Int, gapMs: Long) {
