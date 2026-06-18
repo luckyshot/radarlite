@@ -18,14 +18,13 @@
     <string name="btn_test_warning">Warning</string>
     <string name="btn_test_urgent">Urgent</string>
     <string name="guide_title">QUICK GUIDE</string>
-    <string name="guide_sound">Sounds: warning is 3 short beeps at about 12 seconds, followed by
-        a short phrase repeated twice, for example "Speed limit 50, Speed limit 50", "Red light,
-        Red light", or "Average speed zone 50, Average speed zone 50". Urgent is a single 1
-        second, higher-pitched beep closer to the camera, with extra margin in urban speed
-        limits.</string>
     <string name="guide_passive">RadarLite only activates when your GPS is actively being used by a
-        navigation app. This makes the app very battery efficient but requires you to drive with a
-        navigation app active in order to receive alerts.</string>
+        navigation app, making the app very battery efficient but requires you to have Waze, Google
+        Maps or another GPS-activating app in order to receive alerts.</string>
+    <string name="guide_sound">A first warning sound (3 short beeps) will sound at about 12 seconds
+        of the camera, followed by a short phrase, for example "Speed limit 50", "Red light", or
+        "Average speed zone 50". Once you get closer to the camera, an Urgent sound (single 1
+        second, higher-pitched beep) will sound.</string>
     <string name="about_title">ABOUT</string>
     <string name="about_privacy">Privacy policy</string>
     <string name="about_source">Source code</string>
@@ -44,7 +43,6 @@
     <string name="db_up_to_date">Database is up to date</string>
     <string name="db_updated">Database updated</string>
     <string name="db_update_failed">Update failed. Try again later.</string>
-    <string name="not_on_wifi">Connect to Wi-Fi to update the database</string>
     <string name="no_browser">No browser available</string>
     <string name="no_map_app">No map app available</string>
     <string name="db_missing_title">Download camera database?</string>

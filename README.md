@@ -2,7 +2,7 @@
 
 Lightweight Android speed camera warning app. All features are free, with no ads, subscriptions, analytics SDK, user tracking, or navigation. RadarLite passively listens for location updates produced by other apps and alerts when an OpenStreetMap speed-camera record appears ahead. Once the camera database is installed, monitoring works offline and uses no mobile data while you drive.
 
-RadarLite is free and open source. Store listing assets and Play review notes live in `store-assets/`. The public GitHub Pages site lives in `docs/`.
+RadarLite is free and open source. Store listing assets and Play review notes live in `store-assets/`. The public GitHub Pages site lives in `docs/` and uses plain-language copy for non-technical users.
 
 ## Status
 
@@ -30,9 +30,9 @@ For a fork, override this without editing Kotlin:
 ./gradlew :app:assembleDebug -Pradarlite.dbVersionUrl=https://github.com/OWNER/REPO/releases/latest/download/version.json
 ```
 
-**Note on sounds:** Audio alerts are generated programmatically via `SoundManager.kt` using `AudioTrack`. No audio files are bundled. Warning alerts play 3 short 880 Hz beeps and then say a short phrase twice (`Speed limit 50, Speed limit 50`, `Red light, Red light`, or `Average speed zone 50, Average speed zone 50`). Urgent alerts play a single 1 second, 1200 Hz beep.
+**Note on sounds:** Audio alerts are generated programmatically via `SoundManager.kt` using `AudioTrack`. No audio files are bundled. Warning alerts play 3 short 880 Hz beeps and then say one short phrase (`Speed limit 50`, `Red light`, or `Average speed zone 50`). Urgent alerts play a single 1 second, 1200 Hz beep.
 
-**Note on database:** The app gracefully handles a missing bundled database by creating an empty schema. Tap "Check for update" on first run to download the full camera database (requires Wi-Fi). On launch, RadarLite prompts for an update when the database has not been checked for 7 days or more; choosing Skip suppresses the prompt for 24 hours.
+**Note on database:** The app gracefully handles a missing bundled database by creating an empty schema. Tap "Check for update" on first run to download the full camera database. Manual checks contact the release metadata each time, then download the database only when a newer version exists. If monitoring is running, it reloads the database after a successful update. On launch, RadarLite prompts for an update when the database has not been checked for 7 days or more; choosing Skip suppresses the prompt for 24 hours.
 
 To bundle an initial database, run the pipeline locally once and copy the resulting `cameras.db` (not the .gz) into `app/src/main/assets/cameras.db`.
 
@@ -91,4 +91,4 @@ ServiceState (StateFlow)    — shared state observable from MainActivity
 
 ## Battery impact
 
-RadarLite uses `PRIORITY_PASSIVE` location only. It does not start its own GPS polling, including when driving or near a camera. In practice, it works when another app or the system is already producing location fixes, such as a navigation app running in the foreground. If no external location fixes are produced, RadarLite stays idle and will not alert.
+RadarLite uses `PRIORITY_PASSIVE` location only. It does not start its own GPS polling, including when driving or near a camera. In practice, it works when another app or the system is already producing location fixes, such as a navigation app running in the foreground. If no external location fixes are produced, RadarLite stays idle and will not alert. The speech engine is also started lazily, only when a warning phrase needs to be spoken.

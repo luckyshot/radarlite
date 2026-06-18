@@ -17,11 +17,9 @@ class AlertEngine(
 
     fun process(state: LocationState, cameras: List<Camera>) {
         updateTurnState(state)
-        val activeIds = cameras.map { it.id }.toSet()
-
-        // drop cameras no longer in query radius
-        val gone = alerted.keys.filter { it !in activeIds }
-        gone.forEach { alerted.remove(it); distHistory.remove(it) }
+        val activeIds = cameras.mapTo(mutableSetOf()) { it.id }
+        alerted.keys.retainAll(activeIds)
+        distHistory.keys.retainAll(activeIds)
 
         for (cam in cameras) {
             val dist = GeoUtils.haversine(state.lat, state.lon, cam.lat, cam.lon)

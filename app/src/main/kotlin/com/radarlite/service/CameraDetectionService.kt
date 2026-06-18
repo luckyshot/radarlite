@@ -21,6 +21,7 @@ class CameraDetectionService : Service() {
     companion object {
         const val ACTION_START         = "com.radarlite.START"
         const val ACTION_STOP          = "com.radarlite.STOP"
+        const val ACTION_RELOAD_DB     = "com.radarlite.RELOAD_DB"
         const val NOTIFICATION_ID      = 1
         const val CHANNEL_ID           = "radarlite_service"
         private const val MAX_PASSIVE_FIX_AGE_MS = 30_000L
@@ -67,6 +68,7 @@ class CameraDetectionService : Service() {
         when (intent?.action) {
             ACTION_START, null -> startMonitoring()
             ACTION_STOP        -> { stopMonitoring(); stopSelf(); return START_NOT_STICKY }
+            ACTION_RELOAD_DB   -> reloadDatabase()
         }
         return START_STICKY
     }
@@ -140,6 +142,15 @@ class CameraDetectionService : Service() {
                 GeoUtils.haversine(state.lat, state.lon, it.lat, it.lon)
             }
             ServiceState.gpsMode.value = getString(R.string.gps_passive)
+        }
+    }
+
+    private fun reloadDatabase() {
+        scope.launch {
+            cameraDb.reopen()
+            alertEngine.reset()
+            ServiceState.dbVersion.value = cameraDb.getVersion() ?: "No database"
+            ServiceState.dbCameraCount.value = cameraDb.getCameraCount()
         }
     }
 

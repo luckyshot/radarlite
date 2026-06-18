@@ -78,7 +78,8 @@
 
                 <LinearLayout style="@style/MetricTile" android:layout_marginStart="6dp">
                     <TextView style="@style/MetricLabel" android:text="Closest" />
-                    <TextView android:id="@+id/tvClosestCamera" style="@style/MetricValue" android:text="—" />
+                    <TextView android:id="@+id/tvClosestCamera" style="@style/MetricValue"
+                        android:text="—" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -90,12 +91,14 @@
 
                 <LinearLayout style="@style/MetricTile" android:layout_marginEnd="6dp">
                     <TextView style="@style/MetricLabel" android:text="Heading" />
-                    <TextView android:id="@+id/tvHeading" style="@style/MetricValue" android:text="—" />
+                    <TextView android:id="@+id/tvHeading" style="@style/MetricValue"
+                        android:text="—" />
                 </LinearLayout>
 
                 <LinearLayout style="@style/MetricTile" android:layout_marginStart="6dp">
                     <TextView style="@style/MetricLabel" android:text="Cameras" />
-                    <TextView android:id="@+id/tvCamerasNear" style="@style/MetricValue" android:text="0" />
+                    <TextView android:id="@+id/tvCamerasNear" style="@style/MetricValue"
+                        android:text="0" />
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>
@@ -197,16 +200,19 @@
         <!-- Reference -->
         <LinearLayout style="@style/ScreenCard">
             <TextView style="@style/SectionLabel" android:text="@string/guide_title" />
-            <TextView style="@style/GuideText" android:text="@string/guide_sound" />
             <TextView style="@style/GuideText" android:text="@string/guide_passive" />
+            <TextView style="@style/GuideText" android:text="@string/guide_sound" />
 
             <TextView
                 style="@style/SectionLabel"
                 android:layout_marginTop="10dp"
                 android:text="@string/about_title" />
-            <TextView android:id="@+id/tvPrivacy" style="@style/LinkText" android:text="@string/about_privacy" />
-            <TextView android:id="@+id/tvSource" style="@style/LinkText" android:text="@string/about_source" />
-            <TextView android:id="@+id/tvOsm" style="@style/LinkText" android:text="@string/about_data" />
+            <TextView android:id="@+id/tvPrivacy" style="@style/LinkText"
+                android:text="@string/about_privacy" />
+            <TextView android:id="@+id/tvSource" style="@style/LinkText"
+                android:text="@string/about_source" />
+            <TextView android:id="@+id/tvOsm" style="@style/LinkText"
+                android:text="@string/about_data" />
         </LinearLayout>
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

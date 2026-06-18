@@ -10,6 +10,7 @@ import kotlin.math.*
 import java.util.Locale
 
 class SoundManager(context: Context) {
+    private val appContext = context.applicationContext
     private val audioManager = context.getSystemService(AudioManager::class.java)
     private val mainHandler = Handler(Looper.getMainLooper())
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
@@ -17,34 +18,16 @@ class SoundManager(context: Context) {
     @Volatile private var ttsReady = false
     @Volatile private var pendingSpeech: String? = null
 
-    init {
-        // TTS is async; alerts still beep if the engine is not ready yet.
-        tts = TextToSpeech(context.applicationContext) { status ->
-            mainHandler.post {
-                ttsReady = status == TextToSpeech.SUCCESS
-                if (ttsReady) {
-                    tts?.language = Locale.getDefault()
-                    tts?.setAudioAttributes(AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                        .build())
-                    pendingSpeech?.let { sayNow(it) }
-                    pendingSpeech = null
-                }
-            }
-        }
-    }
-
     fun play(stage: AlertStage, speedLimit: Int? = null, cameraType: String? = null) {
         if (audioManager.ringerMode == AudioManager.RINGER_MODE_SILENT) return
         scope.launch {
             when (stage) {
                 AlertStage.WARNING -> {
                     burst(freqHz = 880f, count = 3, durationMs = 90, gapMs = 220)
-                    warningPhrase(speedLimit, cameraType)?.let { speak(repeatPhrase(it)) }
+                    warningPhrase(speedLimit, cameraType)?.let { speak(it) }
                 }
                 AlertStage.URGENT  -> {
-                    tts?.stop()
+                    clearSpeech()
                     beep(freqHz = 1_200f, durationMs = 1000)
                 }
             }
@@ -57,8 +40,6 @@ class SoundManager(context: Context) {
         else            -> speedLimit?.let { "Speed limit $it" } ?: "Speed limit"
     }
 
-    private fun repeatPhrase(text: String) = "$text, $text"
-
     // One alert burst is intentionally short so repeated bursts are easy to count.
     private suspend fun burst(freqHz: Float, count: Int, durationMs: Int, gapMs: Long) {
         repeat(count) { index ->
@@ -68,14 +49,45 @@ class SoundManager(context: Context) {
     }
 
     private fun speak(text: String) {
-        // If the user taps the test button before TTS is ready, keep the latest phrase.
+        // TTS starts only when needed; alerts still beep if the engine is not ready yet.
         mainHandler.post {
-            if (ttsReady) sayNow(text) else pendingSpeech = text
+            if (ttsReady) sayNow(text) else {
+                pendingSpeech = text
+                ensureTts()
+            }
+        }
+    }
+
+    private fun ensureTts() {
+        if (tts != null) return
+        tts = TextToSpeech(appContext) { status ->
+            mainHandler.post {
+                ttsReady = status == TextToSpeech.SUCCESS
+                if (!ttsReady) {
+                    tts = null
+                    pendingSpeech = null
+                    return@post
+                }
+                tts?.language = Locale.getDefault()
+                tts?.setAudioAttributes(AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                    .build())
+                pendingSpeech?.let { sayNow(it) }
+                pendingSpeech = null
+            }
         }
     }
 
     private fun sayNow(text: String) {
         tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "radarlite_limit")
+    }
+
+    private fun clearSpeech() {
+        mainHandler.post {
+            pendingSpeech = null
+            tts?.stop()
+        }
     }
 
     private suspend fun beep(freqHz: Float, durationMs: Int) {
@@ -119,7 +131,12 @@ class SoundManager(context: Context) {
     }
 
     fun release() {
-        mainHandler.post { tts?.shutdown() }
+        mainHandler.post {
+            pendingSpeech = null
+            ttsReady = false
+            tts?.shutdown()
+            tts = null
+        }
         scope.cancel()
     }
 }

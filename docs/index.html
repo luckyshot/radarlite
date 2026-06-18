@@ -5,25 +5,85 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>RadarLite</title>
   <style>
-    body { margin: 0; font: 16px/1.55 system-ui, sans-serif; color: #f5f5f5; background: #0f0f0f; }
-    main { max-width: 760px; margin: 0 auto; padding: 48px 20px; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 16px/1.55 system-ui, sans-serif; color: #f5f5f5; background: #101112; }
+    main { max-width: 960px; margin: 0 auto; padding: 40px 20px 56px; }
     img { width: 96px; height: 96px; }
     a { color: #f5a623; }
-    .lead { color: #cfcfcf; font-size: 20px; }
-    .card { border-top: 1px solid #2a2a2a; margin-top: 32px; padding-top: 24px; }
+    h1 { margin: 16px 0 12px; font-size: clamp(40px, 8vw, 72px); line-height: 1; }
+    h2 { margin: 0 0 12px; font-size: 24px; }
+    p { margin: 0 0 14px; }
+    ul, ol { margin: 0; padding-left: 22px; }
+    li { margin: 8px 0; }
+    .lead { max-width: 760px; color: #d7d7d7; font-size: 21px; }
+    .hero { padding: 28px 0 20px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+    .button { border: 1px solid #f5a623; border-radius: 8px; padding: 10px 14px; text-decoration: none; }
+    .primary { color: #101112; background: #f5a623; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 22px; margin-top: 28px; }
+    .section { border-top: 1px solid #2a2d30; padding-top: 24px; }
+    .muted { color: #c5c7c9; }
   </style>
 </head>
 <body>
   <main>
-    <img src="assets/icon.png" alt="RadarLite icon">
-    <h1>RadarLite</h1>
-    <p class="lead">A lightweight, free and open source Android speed camera warning app with no ads, no subscriptions, no user tracking, and no mobile data use while driving.</p>
-    <p>RadarLite passively listens for location updates already produced by other apps and alerts when an OpenStreetMap speed-camera record appears ahead. Once the camera database is installed, normal monitoring works offline; internet access is only needed to update the database.</p>
-    <div class="card">
-      <h2>Links</h2>
-      <p><a href="privacy.html">Privacy policy</a></p>
-      <p><a href="https://github.com/luckyshot/radarlite">Source code on GitHub</a></p>
-    </div>
+    <section class="hero">
+      <img src="assets/icon.png" alt="RadarLite icon">
+      <h1>RadarLite</h1>
+      <p class="lead">A simple Android speed camera warning app with no ads, no subscriptions, no tracking, and no mobile data use while you drive.</p>
+      <p class="muted">RadarLite warns you when a known camera is ahead. The camera list comes from an open database maintained by thousands of collaborators, and once it is downloaded, alerts work offline.</p>
+      <div class="actions">
+        <a class="button primary" href="https://github.com/luckyshot/radarlite">Get the app</a>
+        <a class="button" href="privacy.html">Privacy policy</a>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="section">
+        <h2>Features</h2>
+        <ul>
+          <li>Speed camera, red light camera, and average speed zone alerts.</li>
+          <li>Two warning levels: an early warning and a closer urgent alert.</li>
+          <li>Works offline after the camera database is installed.</li>
+          <li>Manual database updates when you choose to check.</li>
+          <li>No ads, subscriptions, analytics, or tracking SDKs.</li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>How It Works</h2>
+        <p>RadarLite listens for location updates already produced by your phone or navigation app. It does not start its own constant GPS polling.</p>
+        <p>When your route points toward a known camera, the app plays a warning sound and then an urgent sound as you get closer.</p>
+      </div>
+
+      <div class="section">
+        <h2>Quick Guide</h2>
+        <ol>
+          <li>Install RadarLite on your Android phone.</li>
+          <li>Open the app and grant the requested permissions.</li>
+          <li>Tap <strong>Check for update</strong> to download the camera database.</li>
+          <li>Turn monitoring on before driving.</li>
+          <li>Use your usual navigation app if you want continuous location updates.</li>
+        </ol>
+      </div>
+
+      <div class="section">
+        <h2>Privacy</h2>
+        <p>RadarLite processes location on your device. It does not include ads, analytics, crash reporting, user accounts, or behavior tracking.</p>
+        <p>Internet access is used only when you manually check for a camera database update.</p>
+      </div>
+
+      <div class="section">
+        <h2>Important</h2>
+        <p>Speed camera warning apps are restricted or illegal in some places. Check your local rules before using RadarLite on public roads.</p>
+      </div>
+
+      <div class="section">
+        <h2>Links</h2>
+        <p><a href="privacy.html">Privacy policy</a></p>
+        <p><a href="https://github.com/luckyshot/radarlite">Source code on GitHub</a></p>
+      </div>
+    </section>
   </main>
 </body>
 </html>

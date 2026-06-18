@@ -12,16 +12,26 @@ class CameraDbHelper(private val context: Context) {
     private val mutex = Mutex()
 
     fun open() {
-        val dbFile = context.getDatabasePath("cameras.db")
-        if (!dbFile.exists()) {
-            dbFile.parentFile?.mkdirs()
-            try {
-                context.assets.open("cameras.db").use { it.copyTo(dbFile.outputStream()) }
-            } catch (e: Exception) {
-                createEmptySchema(dbFile)
-            }
+        db = SQLiteDatabase.openDatabase(ensureDbFile().absolutePath, null, SQLiteDatabase.OPEN_READONLY)
+    }
+
+    suspend fun reopen() = mutex.withLock {
+        db?.close()
+        db = null
+        open()
+    }
+
+    private fun ensureDbFile(): File {
+        val file = context.getDatabasePath("cameras.db")
+        if (file.exists()) return file
+
+        file.parentFile?.mkdirs()
+        try {
+            context.assets.open("cameras.db").use { it.copyTo(file.outputStream()) }
+        } catch (e: Exception) {
+            createEmptySchema(file)
         }
-        db = SQLiteDatabase.openDatabase(dbFile.absolutePath, null, SQLiteDatabase.OPEN_READONLY)
+        return file
     }
 
     private fun createEmptySchema(file: File) {
@@ -83,7 +93,14 @@ class CameraDbHelper(private val context: Context) {
         db?.close()
         db = null
         val dest = context.getDatabasePath("cameras.db")
-        newFile.copyTo(dest, overwrite = true)
+        val swap = File(dest.parentFile, "cameras.db.new")
+        // Replace by rename so any already-open reader keeps the old file handle until it reopens.
+        newFile.copyTo(swap, overwrite = true)
+        if (dest.exists() && !dest.delete()) throw IllegalStateException("Could not replace camera database")
+        if (!swap.renameTo(dest)) {
+            swap.copyTo(dest, overwrite = true)
+            swap.delete()
+        }
         db = SQLiteDatabase.openDatabase(dest.absolutePath, null, SQLiteDatabase.OPEN_READONLY)
     }
 

@@ -122,7 +122,7 @@ class MainActivity : AppCompatActivity() {
     private fun setupUpdateButton() {
         binding.btnCheckUpdate.setOnClickListener {
             lifecycleScope.launch {
-                runDatabaseUpdate(requireWifi = true)
+                runDatabaseUpdate()
             }
         }
     }
@@ -144,20 +144,14 @@ class MainActivity : AppCompatActivity() {
         binding.tvOsm.setOnClickListener { openExternal(getString(R.string.url_osm), R.string.no_browser) }
     }
 
-    private suspend fun runDatabaseUpdate(requireWifi: Boolean): DatabaseUpdater.Result {
+    private suspend fun runDatabaseUpdate(): DatabaseUpdater.Result {
         binding.btnCheckUpdate.isEnabled = false
         binding.btnCheckUpdate.text = getString(R.string.updating_db)
 
-        val dbHelper = CameraDbHelper(applicationContext).also { it.open() }
-        val result = try {
-            DatabaseUpdater.checkAndUpdate(applicationContext, dbHelper, requireWifi)
-        } finally {
-            dbHelper.close()
-        }
+        val result = DatabaseUpdater.checkAndUpdate(applicationContext)
         val msg = when (result) {
             DatabaseUpdater.Result.UPDATED      -> getString(R.string.db_updated)
             DatabaseUpdater.Result.UP_TO_DATE   -> getString(R.string.db_up_to_date)
-            DatabaseUpdater.Result.NOT_ON_WIFI  -> getString(R.string.not_on_wifi)
             DatabaseUpdater.Result.FAILED       -> getString(R.string.db_update_failed)
         }
         showToast(msg)
@@ -166,6 +160,9 @@ class MainActivity : AppCompatActivity() {
         if (result == DatabaseUpdater.Result.UPDATED ||
             result == DatabaseUpdater.Result.UP_TO_DATE) {
             ServiceState.lastDbCheckMs.value = System.currentTimeMillis()
+        }
+        if (result == DatabaseUpdater.Result.UPDATED && ServiceState.isRunning.value) {
+            CameraDetectionService.start(applicationContext, CameraDetectionService.ACTION_RELOAD_DB)
         }
         refreshDatabaseState()
         return result
@@ -189,7 +186,7 @@ class MainActivity : AppCompatActivity() {
             .setTitle(getString(R.string.db_missing_title))
             .setMessage(getString(R.string.db_missing_message))
             .setPositiveButton(getString(R.string.db_missing_download)) { _, _ ->
-                lifecycleScope.launch { runDatabaseUpdate(requireWifi = false) }
+                lifecycleScope.launch { runDatabaseUpdate() }
             }
             .setNegativeButton(getString(R.string.db_missing_later), null)
             .show()
@@ -201,7 +198,7 @@ class MainActivity : AppCompatActivity() {
             .setTitle(getString(R.string.db_stale_title))
             .setMessage(getString(R.string.db_stale_message))
             .setPositiveButton(getString(R.string.db_stale_update)) { _, _ ->
-                lifecycleScope.launch { runDatabaseUpdate(requireWifi = true) }
+                lifecycleScope.launch { runDatabaseUpdate() }
             }
             .setNegativeButton(getString(R.string.db_stale_skip)) { _, _ ->
                 DatabaseUpdater.markStalePromptShown(this)

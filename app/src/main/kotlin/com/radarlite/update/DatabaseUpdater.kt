@@ -2,8 +2,6 @@ package com.radarlite.update
 
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import com.radarlite.BuildConfig
 import com.radarlite.db.CameraDbHelper
 import kotlinx.coroutines.Dispatchers
@@ -17,7 +15,7 @@ import java.util.zip.GZIPInputStream
 
 object DatabaseUpdater {
 
-    private const val PREFS_NAME  = "radarlite_prefs"
+    private const val PREFS_NAME = "radarlite_prefs"
     private const val KEY_LAST_CHECK = "last_db_check_ms"
     private const val KEY_LAST_STALE_PROMPT = "last_stale_db_prompt_ms"
     private const val KEY_DB_VERSION = "db_version"
@@ -29,54 +27,47 @@ object DatabaseUpdater {
         .readTimeout(120, TimeUnit.SECONDS)
         .build()
 
-    suspend fun checkAndUpdate(
-        context: Context,
-        dbHelper: CameraDbHelper,
-        requireWifi: Boolean = true
-    ): Result {
-        if (requireWifi && !isOnWifi(context)) return Result.NOT_ON_WIFI
-
+    suspend fun checkAndUpdate(context: Context): Result = withContext(Dispatchers.IO) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val lastCheck = prefs.getLong(KEY_LAST_CHECK, 0)
-        if (System.currentTimeMillis() - lastCheck < CHECK_INTERVAL) return Result.UP_TO_DATE
+        val dbHelper = CameraDbHelper(context)
+        try {
+            val remote = fetchVersionInfo() ?: return@withContext Result.FAILED
+            dbHelper.open()
+            val localVersion = prefs.getString(KEY_DB_VERSION, null)
+                ?: dbHelper.getVersion()
+                ?: ""
 
-        return withContext(Dispatchers.IO) {
-            try {
-                val remote = fetchVersionInfo() ?: return@withContext Result.FAILED
-                val localVersion = prefs.getString(KEY_DB_VERSION, null)
-                    ?: dbHelper.getVersion()
-                    ?: ""
-
-                if (remote.version <= localVersion) {
-                    prefs.edit()
-                        .putLong(KEY_LAST_CHECK, System.currentTimeMillis())
-                        .putString(KEY_DB_VERSION, localVersion)
-                        .apply()
-                    return@withContext Result.UP_TO_DATE
-                }
-
-                val tmpGz = File(context.cacheDir, "cameras_update.db.gz")
-                val tmpDb = File(context.cacheDir, "cameras_update.db")
-
-                download(remote.url, tmpGz)
-                decompress(tmpGz, tmpDb)
-
-                if (!validateDb(tmpDb)) {
-                    tmpGz.delete(); tmpDb.delete()
-                    return@withContext Result.FAILED
-                }
-
-                dbHelper.replaceWith(tmpDb)
+            if (remote.version <= localVersion) {
                 prefs.edit()
-                    .putString(KEY_DB_VERSION, remote.version)
                     .putLong(KEY_LAST_CHECK, System.currentTimeMillis())
+                    .putString(KEY_DB_VERSION, localVersion)
                     .apply()
-
-                tmpGz.delete(); tmpDb.delete()
-                Result.UPDATED
-            } catch (e: Exception) {
-                Result.FAILED
+                return@withContext Result.UP_TO_DATE
             }
+
+            val tmpGz = File(context.cacheDir, "cameras_update.db.gz")
+            val tmpDb = File(context.cacheDir, "cameras_update.db")
+
+            download(remote.url, tmpGz)
+            decompress(tmpGz, tmpDb)
+
+            if (!validateDb(tmpDb)) {
+                tmpGz.delete(); tmpDb.delete()
+                return@withContext Result.FAILED
+            }
+
+            dbHelper.replaceWith(tmpDb)
+            prefs.edit()
+                .putString(KEY_DB_VERSION, remote.version)
+                .putLong(KEY_LAST_CHECK, System.currentTimeMillis())
+                .apply()
+
+            tmpGz.delete(); tmpDb.delete()
+            Result.UPDATED
+        } catch (e: Exception) {
+            Result.FAILED
+        } finally {
+            dbHelper.close()
         }
     }
 
@@ -141,13 +132,6 @@ object DatabaseUpdater {
         count > 0
     } catch (e: Exception) { false }
 
-    private fun isOnWifi(context: Context): Boolean {
-        val cm = context.getSystemService(ConnectivityManager::class.java)
-        return cm.activeNetwork?.let {
-            cm.getNetworkCapabilities(it)?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
-        } ?: false
-    }
-
-    enum class Result { UPDATED, UP_TO_DATE, NOT_ON_WIFI, FAILED }
+    enum class Result { UPDATED, UP_TO_DATE, FAILED }
     private data class VersionInfo(val version: String, val url: String)
 }
