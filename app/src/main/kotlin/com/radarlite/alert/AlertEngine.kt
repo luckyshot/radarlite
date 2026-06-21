@@ -8,6 +8,10 @@ class AlertEngine(
     private val soundManager: SoundManager,
     private val onAlert: (Camera, AlertStage) -> Unit
 ) {
+    companion object {
+        private const val MIN_ALERT_SPEED_KMH = 15f
+    }
+
     // camera id -> highest stage already alerted this pass
     private val alerted = mutableMapOf<Long, AlertStage>()
     // camera id -> rolling distance buffer (last 4 readings)
@@ -17,6 +21,9 @@ class AlertEngine(
 
     fun process(state: LocationState, cameras: List<Camera>) {
         updateTurnState(state)
+        // Ignore walking and other very slow movement; GPS heading and distance trends are too noisy here.
+        if (state.speedKmh < MIN_ALERT_SPEED_KMH) return
+
         val activeIds = cameras.mapTo(mutableSetOf()) { it.id }
         alerted.keys.retainAll(activeIds)
         distHistory.keys.retainAll(activeIds)
@@ -63,9 +70,6 @@ class AlertEngine(
 
         val distDecreasing = history.last() < history.first()
 
-        // below 15 km/h GPS heading is unreliable, use distance only
-        if (state.speedKmh < 15f) return distDecreasing
-
         val bearingToCam = GeoUtils.bearingBetween(state.lat, state.lon, cam.lat, cam.lon)
         val headingDiff = GeoUtils.angularDifference(state.bearingDeg, bearingToCam)
         val onLikelyPath = isOnLikelyPath(
@@ -85,7 +89,7 @@ class AlertEngine(
     }
 
     private fun updateTurnState(state: LocationState) {
-        if (state.speedKmh < 15f) {
+        if (state.speedKmh < MIN_ALERT_SPEED_KMH) {
             lastBearingDeg = null
             turningFixes = 0
             return
