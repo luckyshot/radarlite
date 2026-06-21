@@ -7,6 +7,6 @@
     "all": "node fetch_osm.js && node merge.js && node build_db.js"
   },
   "dependencies": {
-    "better-sqlite3": "^9.6.0"
+    "better-sqlite3": "^12.11.1"
   }
 }
