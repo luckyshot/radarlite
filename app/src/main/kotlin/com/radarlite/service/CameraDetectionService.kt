@@ -25,6 +25,7 @@ class CameraDetectionService : Service() {
         const val NOTIFICATION_ID      = 1
         const val CHANNEL_ID           = "radarlite_service"
         private const val MAX_PASSIVE_FIX_AGE_MS = 30_000L
+        private const val PASSIVE_LISTENER_REFRESH_MS = 10 * 60 * 1000L
 
         fun start(context: Context, action: String = ACTION_START) {
             val intent = Intent(context, CameraDetectionService::class.java).apply {
@@ -49,6 +50,7 @@ class CameraDetectionService : Service() {
 
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var locationIdleJob: Job? = null
+    private var listenerRefreshJob: Job? = null
     private var notificationStatus: String? = null
     private var monitoring = false
 
@@ -98,6 +100,7 @@ class CameraDetectionService : Service() {
         notificationStatus = status
         startForeground(NOTIFICATION_ID, buildNotification(status))
         locationStrategy.start()
+        startListenerRefresh()
     }
 
     private fun stopMonitoring() {
@@ -105,6 +108,7 @@ class CameraDetectionService : Service() {
         monitoring = false
         locationStrategy.stop()
         locationIdleJob?.cancel()
+        listenerRefreshJob?.cancel()
         alertEngine.reset()
         ServiceState.isRunning.value  = false
         ServiceState.isReceivingLocation.value = false
@@ -168,6 +172,17 @@ class CameraDetectionService : Service() {
             if (!monitoring) return@launch
             ServiceState.isReceivingLocation.value = false
             updateNotificationStatus(currentNotificationStatus())
+        }
+    }
+
+    private fun startListenerRefresh() {
+        listenerRefreshJob?.cancel()
+        // Passive only: re-registering recovers a stale Fused callback without starting GPS.
+        listenerRefreshJob = scope.launch {
+            while (isActive) {
+                delay(PASSIVE_LISTENER_REFRESH_MS)
+                locationStrategy.restart()
+            }
         }
     }
 

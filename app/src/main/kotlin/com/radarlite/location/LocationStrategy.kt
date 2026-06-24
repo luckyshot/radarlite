@@ -4,12 +4,17 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
 import android.os.Looper
+import android.util.Log
 import com.google.android.gms.location.*
 
 class LocationStrategy(
     context: Context,
     private val onLocation: (LocationState) -> Unit
 ) {
+    private companion object {
+        const val TAG = "LocationStrategy"
+    }
+
     private val fusedClient = LocationServices.getFusedLocationProviderClient(context)
 
     private val callback = object : LocationCallback() {
@@ -26,13 +31,23 @@ class LocationStrategy(
 
     @SuppressLint("MissingPermission")
     fun start() {
-        fusedClient.requestLocationUpdates(buildRequest(), callback, Looper.getMainLooper())
-            // If navigation was already active, use the externally produced fix immediately.
-            .addOnSuccessListener { emitCachedLastLocation() }
+        try {
+            fusedClient.requestLocationUpdates(buildRequest(), callback, Looper.getMainLooper())
+                // If navigation was already active, use the externally produced fix immediately.
+                .addOnSuccessListener { emitCachedLastLocation() }
+                .addOnFailureListener { Log.w(TAG, "Passive location request failed", it) }
+        } catch (e: SecurityException) {
+            Log.w(TAG, "Passive location permission missing", e)
+        }
     }
 
     fun stop() {
         fusedClient.removeLocationUpdates(callback)
+    }
+
+    fun restart() {
+        stop()
+        start()
     }
 
     private fun buildRequest(): LocationRequest =
@@ -45,7 +60,13 @@ class LocationStrategy(
 
     @SuppressLint("MissingPermission")
     private fun emitCachedLastLocation() {
-        fusedClient.lastLocation.addOnSuccessListener { it?.let(::emitLocation) }
+        try {
+            fusedClient.lastLocation
+                .addOnSuccessListener { it?.let(::emitLocation) }
+                .addOnFailureListener { Log.w(TAG, "Cached passive location read failed", it) }
+        } catch (e: SecurityException) {
+            Log.w(TAG, "Cached passive location permission missing", e)
+        }
     }
 
     private fun emitLocation(loc: Location) {
