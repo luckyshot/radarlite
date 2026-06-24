@@ -98,7 +98,13 @@ class CameraDetectionService : Service() {
 
         val status = currentNotificationStatus()
         notificationStatus = status
-        startForeground(NOTIFICATION_ID, buildNotification(status))
+        try {
+            startForeground(NOTIFICATION_ID, buildNotification(status))
+        } catch (e: RuntimeException) {
+            stopMonitoring()
+            stopSelf()
+            return
+        }
         locationStrategy.start()
         startListenerRefresh()
     }
@@ -181,7 +187,8 @@ class CameraDetectionService : Service() {
         listenerRefreshJob = scope.launch {
             while (isActive) {
                 delay(PASSIVE_LISTENER_REFRESH_MS)
-                locationStrategy.restart()
+                locationStrategy.stop()
+                locationStrategy.start()
             }
         }
     }

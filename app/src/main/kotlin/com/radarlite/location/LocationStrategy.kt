@@ -45,11 +45,6 @@ class LocationStrategy(
         fusedClient.removeLocationUpdates(callback)
     }
 
-    fun restart() {
-        stop()
-        start()
-    }
-
     private fun buildRequest(): LocationRequest =
         LocationRequest.Builder(Priority.PRIORITY_PASSIVE, Long.MAX_VALUE)
             // Passive keeps GPS owned by other apps. Avoid a distance gate: the first background
