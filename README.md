@@ -32,6 +32,8 @@ For a fork, override this without editing Kotlin:
 
 **Note on sounds:** Audio alerts are generated programmatically via `SoundManager.kt` using `AudioTrack`. No audio files are bundled. Warning alerts play 3 short 880 Hz beeps and then say one short phrase (`Speed limit 50`, `Red light`, or `Average speed zone 50`). Urgent alerts play a single 1 second, 1200 Hz beep.
 
+**Note on walking:** Camera alerts are suppressed below 15 km/h so walking-speed passive location fixes do not trigger warnings. The app can still show location status and nearby cameras while moving slowly.
+
 **Note on database:** The app gracefully handles a missing bundled database by creating an empty schema. Tap "Check for update" on first run to download the full camera database. Manual checks contact the release metadata each time, then download the database only when a newer version exists. If monitoring is running, it reloads the database after a successful update. On launch, RadarLite prompts for an update when the database has not been checked for 7 days or more; choosing Skip suppresses the prompt for 24 hours.
 
 To bundle an initial database, run the pipeline locally once and copy the resulting `cameras.db` (not the .gz) into `app/src/main/assets/cameras.db`.
@@ -50,6 +52,8 @@ cd pipeline
 npm ci
 npm run all
 ```
+
+The pipeline runs on Node 24 in GitHub Actions. Keep native pipeline dependencies, especially `better-sqlite3`, on versions that support Node 24 so `npm ci` can use compatible prebuilt binaries.
 
 ## Data sources
 
@@ -91,4 +95,4 @@ ServiceState (StateFlow)    — shared state observable from MainActivity
 
 ## Battery impact
 
-RadarLite uses `PRIORITY_PASSIVE` location only. It does not start its own GPS polling, including when driving or near a camera. In practice, it works when another app or the system is already producing location fixes, such as a navigation app running in the foreground. If no external location fixes are produced, RadarLite stays idle and will not alert. The speech engine is also started lazily, only when a warning phrase needs to be spoken.
+RadarLite uses `PRIORITY_PASSIVE` location only. It never starts GPS polling; it alerts only when another app or the system is already producing fixes. Without external fixes, it stays idle. While monitoring is on, the foreground service accepts every external fix, may read the latest cached Fused fix, and periodically re-registers the passive listener to recover stale callbacks. Speech starts only when an alert needs it.
