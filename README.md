@@ -34,6 +34,8 @@ For a fork, override this without editing Kotlin:
 
 **Note on walking:** Camera alerts are suppressed below 15 km/h so walking-speed passive location fixes do not trigger warnings. The app can still show location status and nearby cameras while moving slowly.
 
+**Speed announcements:** The Interval dropdown can speak the current speed as only a number when it enters a new 5, 10, or 20 km/h band; it is disabled by default and never announces below 20 km/h. It uses the same fresh passive location fixes as camera alerts, so it does not add GPS or network use.
+
 **Note on database:** The app gracefully handles a missing bundled database by creating an empty schema. Tap "Check for update" on first run to download the full camera database. Manual checks contact the release metadata each time, then download the database only when a newer version exists. If monitoring is running, it reloads the database after a successful update. On launch, RadarLite prompts for an update when the database has not been checked for 7 days or more; choosing Skip suppresses the prompt for 24 hours.
 
 To bundle an initial database, run the pipeline locally once and copy the resulting `cameras.db` (not the .gz) into `app/src/main/assets/cameras.db`.

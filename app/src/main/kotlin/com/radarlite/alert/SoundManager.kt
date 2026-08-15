@@ -34,6 +34,9 @@ class SoundManager(context: Context) {
         }
     }
 
+    // Speed announcements intentionally have no tone: only the selected number is spoken.
+    fun speakSpeed(speedKmh: Int) = speak(speedKmh.toString())
+
     private fun warningPhrase(speedLimit: Int?, cameraType: String?): String? = when (cameraType) {
         "red_light"     -> "Red light"
         "average_speed" -> speedLimit?.let { "Average speed zone $it" } ?: "Average speed zone"

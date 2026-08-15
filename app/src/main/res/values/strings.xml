@@ -7,6 +7,12 @@
     <string name="notification_status_idle">Idle</string>
     <string name="gps_passive">Passive (external GPS only)</string>
     <string name="btn_check_update">Check for update</string>
+    <string-array name="speed_announcement_intervals">
+        <item>Disabled</item>
+        <item>5 km/h</item>
+        <item>10 km/h</item>
+        <item>20 km/h</item>
+    </string-array>
     <string name="no_database">No database</string>
     <string name="no_alerts">No alerts yet</string>
     <string name="disclaimer_title">Legal notice</string>

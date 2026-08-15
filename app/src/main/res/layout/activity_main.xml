@@ -62,6 +62,19 @@
                 android:layout_height="wrap_content" />
         </LinearLayout>
 
+        <!-- This affects only speech; monitoring remains passive and battery-friendly. -->
+        <LinearLayout style="@style/ScreenCard">
+            <TextView style="@style/SectionLabel" android:text="SPEED ANNOUNCEMENTS" />
+            <LinearLayout style="@style/StatusRow">
+                <TextView style="@style/RowLabel" android:text="Interval" />
+                <Spinner
+                    android:id="@+id/spinnerSpeedAnnouncements"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:entries="@array/speed_announcement_intervals" />
+            </LinearLayout>
+        </LinearLayout>
+
         <!-- Live drive state -->
         <LinearLayout style="@style/ScreenCard">
             <TextView style="@style/SectionLabel" android:text="LIVE DRIVE" />

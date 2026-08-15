@@ -9,6 +9,7 @@ import androidx.core.app.NotificationCompat
 import com.radarlite.MainActivity
 import com.radarlite.R
 import com.radarlite.ServiceState
+import com.radarlite.SpeedAnnouncements
 import com.radarlite.alert.*
 import com.radarlite.db.*
 import com.radarlite.location.LocationState
@@ -53,6 +54,8 @@ class CameraDetectionService : Service() {
     private var listenerRefreshJob: Job? = null
     private var notificationStatus: String? = null
     private var monitoring = false
+    private var lastSpeedInterval = 0
+    private var lastAnnouncedSpeed: Int? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -116,6 +119,7 @@ class CameraDetectionService : Service() {
         locationIdleJob?.cancel()
         listenerRefreshJob?.cancel()
         alertEngine.reset()
+        lastAnnouncedSpeed = null
         ServiceState.isRunning.value  = false
         ServiceState.isReceivingLocation.value = false
         ServiceState.lastLat.value = null
@@ -139,6 +143,7 @@ class CameraDetectionService : Service() {
             val cameras = cameraDb.getCamerasNear(state.lat, state.lon, 600f)
 
             alertEngine.process(state, cameras)
+            announceSpeed(state.speedKmh)
 
             // Keep the activity's status card in sync with each passive location fix.
             ServiceState.lastLat.value = state.lat
@@ -166,6 +171,24 @@ class CameraDetectionService : Service() {
 
     private fun isFreshFix(state: LocationState): Boolean =
         state.timeMs > 0 && System.currentTimeMillis() - state.timeMs <= MAX_PASSIVE_FIX_AGE_MS
+
+    private fun announceSpeed(speedKmh: Float) {
+        val interval = SpeedAnnouncements.interval(this)
+        // A preference change begins a new announcement sequence on the next passive fix.
+        if (interval != lastSpeedInterval) {
+            lastSpeedInterval = interval
+            lastAnnouncedSpeed = null
+        }
+        if (interval == 0 || speedKmh < SpeedAnnouncements.MIN_SPEED_KMH) {
+            lastAnnouncedSpeed = null
+            return
+        }
+        val roundedSpeed = (speedKmh.toInt() / interval) * interval
+        if (roundedSpeed != lastAnnouncedSpeed) {
+            lastAnnouncedSpeed = roundedSpeed
+            soundManager.speakSpeed(roundedSpeed)
+        }
+    }
 
     private fun markLocationActive() {
         if (!monitoring) return

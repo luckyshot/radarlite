@@ -9,6 +9,8 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.View
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -86,6 +88,7 @@ class MainActivity : AppCompatActivity() {
 
         setupRecyclerView()
         setupSwitch()
+        setupSpeedAnnouncements()
         setupUpdateButton()
         setupSoundButtons()
         setupLastFixLink()
@@ -124,6 +127,19 @@ class MainActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 runDatabaseUpdate()
             }
+        }
+    }
+
+    private fun setupSpeedAnnouncements() {
+        val options = intArrayOf(0, 5, 10, 20)
+        binding.spinnerSpeedAnnouncements.adapter = ArrayAdapter.createFromResource(
+            this, R.array.speed_announcement_intervals, android.R.layout.simple_spinner_dropdown_item
+        )
+        binding.spinnerSpeedAnnouncements.setSelection(options.indexOf(SpeedAnnouncements.interval(this)))
+        binding.spinnerSpeedAnnouncements.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) =
+                SpeedAnnouncements.setInterval(this@MainActivity, options[position])
+            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
         }
     }
 
