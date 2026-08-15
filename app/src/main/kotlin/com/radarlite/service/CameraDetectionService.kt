@@ -38,7 +38,7 @@ class CameraDetectionService : Service() {
 
             // Starting monitoring must use startForegroundService on Android O+.
             // Stopping is a normal command and can use startService from the foreground UI.
-            if (action == ACTION_START && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (action == ACTION_START) {
                 context.startForegroundService(intent)
             } else {
                 context.startService(intent)

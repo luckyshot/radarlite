@@ -11,6 +11,5 @@
     <color name="status_idle_bg">#2D2D2D</color>
     <color name="status_stopped_bg">#3A2424</color>
     <color name="status_active_bg">#1F3A28</color>
-    <color name="divider">#2A2A2A</color>
     <color name="ic_launcher_background">#0F0F0F</color>
 </resources>
