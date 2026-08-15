@@ -16,37 +16,37 @@
 
 ## Short Description
 
-Free offline speed camera alerts. No ads, subscriptions, tracking
+Free offline road alerts. No ads, subscriptions, tracking
 
 ## Full Description
 
-RadarLite is a lightweight, free and open source speed camera warning app for Android.
+RadarLite is a lightweight, free and open source road-alert app for Android.
 
 All features are free. There are no ads, no subscriptions, no in-app purchases, and no user tracking.
 
-It passively listens for location updates already produced by other apps, such as navigation apps, and warns when an OpenStreetMap speed-camera record appears ahead.
+It passively listens for location updates already produced by other apps, such as navigation apps, and warns when an OpenStreetMap camera or explicitly mapped road hazard appears ahead.
 
-Once the camera database is installed, RadarLite works offline while you drive. No internet connection or mobile data is needed for normal monitoring.
+Once the alert database is installed, RadarLite works offline while you drive. No internet connection or mobile data is needed for normal monitoring.
 
-RadarLite does not include analytics, crash reporting, or tracking SDKs. Location processing happens on device. Network access is used only to check for and download the camera database from GitHub Releases.
+RadarLite does not include analytics, crash reporting, or tracking SDKs. Location processing happens on device. Network access is used only to check for and download the alert database from GitHub Releases.
 
 RadarLite is free and open source under the AGPL. Source code is available at:
 https://github.com/luckyshot/radarlite
 
-Camera data is derived from OpenStreetMap and is available under the Open Data Commons Open Database License. See:
+Alert data is derived from OpenStreetMap and is available under the Open Data Commons Open Database License. See:
 https://www.openstreetmap.org/copyright
 
-Important: Speed camera warning apps are illegal or restricted in some countries and regions. Check local laws before using RadarLite on public roads.
+Important: Road-alert apps are illegal or restricted in some countries and regions. Check local laws before using RadarLite on public roads.
 
 ## Background Location Declaration
 
-RadarLite uses background location to provide speed camera alerts while the app is not visible. This is the app's core feature: warning the driver while another navigation app is open, the screen is off, or RadarLite is running as a foreground service.
+RadarLite uses background location to provide road alerts while the app is not visible. This is the app's core feature: warning the driver while another navigation app is open, the screen is off, or RadarLite is running as a foreground service.
 
 Location is processed on device and is not sent to the developer.
 
 ## Prominent In-App Disclosure
 
-RadarLite accesses location in the background to detect nearby speed cameras and show alerts even when the app is closed or not in use. Your location stays on your device and is not shared. Select Location and Allow all the time.
+RadarLite accesses location in the background to detect nearby road alerts and show warnings even when the app is closed or not in use. Your location stays on your device and is not shared. Select Location and Allow all the time.
 
 ## Data Safety Draft
 
@@ -66,7 +66,7 @@ RadarLite accesses location in the background to detect nearby speed cameras and
 - No gambling
 - No ads
 - Not directed at children
-- Contains legal/safety notice because speed camera warning apps are restricted in some regions
+- Contains legal/safety notice because road-alert apps are restricted in some regions
 
 ## Required Images
 

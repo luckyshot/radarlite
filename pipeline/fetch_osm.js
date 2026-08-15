@@ -44,10 +44,10 @@ async function fetchOverpass(query) {
 
 function parseSpeed(raw) {
   if (!raw) return null;
-  raw = raw.trim();
-  if (raw.endsWith(' mph')) return Math.round(parseInt(raw) * 1.60934);
-  const n = parseInt(raw);
-  return isNaN(n) ? null : n;
+  const match = raw.trim().match(/^(\d+)\s*(km\/h|kph|mph)?$/i);
+  if (!match) return null; // Ignore conditional, variable, and multi-value limits.
+  const speed = Number(match[1]);
+  return match[2]?.toLowerCase() === 'mph' ? Math.round(speed * 1.60934) : speed;
 }
 
 function classifyType(tags) {

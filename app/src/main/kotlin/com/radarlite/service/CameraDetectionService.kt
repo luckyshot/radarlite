@@ -60,17 +60,14 @@ class CameraDetectionService : Service() {
     private var monitoring = false
     private var lastSpeedInterval = 0
     private var lastAnnouncedSpeed: Int? = null
+    private var lastProcessedFixMs = 0L
 
     override fun onCreate() {
         super.onCreate()
         cameraDb     = CameraDbHelper(this).apply { open() }
         appDb        = AppDatabase.get(this)
         soundManager = SoundManager(this)
-        alertEngine  = AlertEngine(
-            soundManager,
-            { AlertSettings.enabled(this, it) },
-            { AlertSettings.overspeedEnabled(this) }
-        ) { cam, speedKmh -> logAlert(cam, speedKmh) }
+        alertEngine = AlertEngine(soundManager) { cam, speedKmh -> logAlert(cam, speedKmh) }
         locationStrategy = LocationStrategy(this) { state -> onLocationUpdate(state) }
 
         ServiceState.dbVersion.value     = cameraDb.getVersion() ?: "No database"
@@ -128,6 +125,7 @@ class CameraDetectionService : Service() {
         listenerRefreshJob?.cancel()
         alertEngine.reset()
         lastAnnouncedSpeed = null
+        lastProcessedFixMs = 0L
         ServiceState.isRunning.value  = false
         ServiceState.isReceivingLocation.value = false
         ServiceState.lastLat.value = null
@@ -150,12 +148,16 @@ class CameraDetectionService : Service() {
             // Passive callbacks can arrive together; preserve alert order and mutable engine state.
             locationMutex.withLock {
                 if (!monitoring) return@withLock
-                val cameras = cameraDb.getCamerasNear(state.lat, state.lon, 600f)
+                // Cached and callback fixes may arrive out of order; process each fix only once.
+                if (state.timeMs <= lastProcessedFixMs) return@withLock
+                lastProcessedFixMs = state.timeMs
+                val alerts = cameraDb.getCamerasNear(state.lat, state.lon, 600f)
+                    .filter { AlertSettings.enabled(this@CameraDetectionService, it.type) }
                 if (!monitoring) return@withLock
 
                 announceSpeed(state.speedKmh)
                 // Alert speech follows optional speed speech, so a safety warning has priority.
-                alertEngine.process(state, cameras)
+                alertEngine.process(state, alerts, AlertSettings.overspeedEnabled(this@CameraDetectionService))
 
                 // Keep the activity's status card in sync with each passive location fix.
                 ServiceState.lastLat.value = state.lat
@@ -164,8 +166,8 @@ class CameraDetectionService : Service() {
                 ServiceState.accuracyM.value = state.accuracyM
                 ServiceState.lastFixMs.value = state.timeMs
                 ServiceState.speedKmh.value = state.speedKmh
-                ServiceState.camerasNearby.value = cameras.size
-                ServiceState.closestCameraDistanceM.value = cameras.minOfOrNull {
+                ServiceState.camerasNearby.value = alerts.size
+                ServiceState.closestCameraDistanceM.value = alerts.minOfOrNull {
                     GeoUtils.haversine(state.lat, state.lon, it.lat, it.lon)
                 }
                 ServiceState.gpsMode.value = getString(R.string.gps_passive)

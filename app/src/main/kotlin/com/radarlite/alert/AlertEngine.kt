@@ -6,8 +6,6 @@ import com.radarlite.util.GeoUtils
 
 class AlertEngine(
     private val soundManager: SoundManager,
-    private val isTypeEnabled: (String) -> Boolean,
-    private val isOverspeedEnabled: () -> Boolean,
     private val onAlert: (Camera, Float) -> Unit
 ) {
     companion object {
@@ -23,18 +21,17 @@ class AlertEngine(
     private var lastBearingDeg: Float? = null
     private var turningFixes = 0
 
-    fun process(state: LocationState, cameras: List<Camera>) {
+    fun process(state: LocationState, alerts: List<Camera>, overspeedEnabled: Boolean) {
         updateTurnState(state)
         // Ignore walking and other very slow movement; GPS heading and distance trends are too noisy here.
         val heading = state.bearingDeg ?: return
         if (state.speedKmh < MIN_ALERT_SPEED_KMH) return
 
-        val enabledAlerts = cameras.filter { isTypeEnabled(it.type) }
-        val activeIds = enabledAlerts.mapTo(mutableSetOf()) { it.id }
+        val activeIds = alerts.mapTo(mutableSetOf()) { it.id }
         alerted.keys.retainAll(activeIds)
         distHistory.keys.retainAll(activeIds)
 
-        for (cam in enabledAlerts) {
+        for (cam in alerts) {
             val dist = GeoUtils.haversine(state.lat, state.lon, cam.lat, cam.lon)
 
             val history = distHistory.getOrPut(cam.id) { ArrayDeque(4) }
@@ -61,7 +58,7 @@ class AlertEngine(
                     speedLimit = if (target == AlertStage.WARNING) cam.speedLimit else null,
                     cameraType = if (target == AlertStage.WARNING) cam.type else null,
                     overspeed = target == AlertStage.WARNING && cam.type in CAMERA_TYPES &&
-                        isOverspeedEnabled() &&
+                        overspeedEnabled &&
                         cam.speedLimit?.let { state.speedKmh > it + OVERSPEED_TOLERANCE_KMH } == true
                 )
                 // A closer urgent tone is the same encounter, not a second log entry.

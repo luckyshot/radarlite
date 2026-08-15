@@ -7,6 +7,6 @@
     <path stroke="#F5A623" stroke-linecap="round" stroke-linejoin="round" stroke-width="35" fill="none" d="M30 105c45.99-39.955 105.192-62 166.5-62S317.009 65.045 363 105"/>
   </g>
   <text x="420" y="205" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="68" font-weight="700">RadarLite</text>
-  <text x="424" y="270" fill="#F5A623" font-family="Arial, Helvetica, sans-serif" font-size="34">Passive speed camera alerts</text>
+  <text x="424" y="270" fill="#F5A623" font-family="Arial, Helvetica, sans-serif" font-size="34">Passive road alerts</text>
   <text x="424" y="330" fill="#D8D8D8" font-family="Arial, Helvetica, sans-serif" font-size="26">Open source. No ads. No analytics.</text>
 </svg>

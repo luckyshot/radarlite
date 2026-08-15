@@ -1,4 +1,4 @@
-name: Update Camera Database
+name: Update Alert Database
 
 on:
   schedule:
@@ -49,7 +49,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: db-${{ steps.date.outputs.date }}
-          name: Camera DB ${{ steps.date.outputs.date }}
+          name: Alert DB ${{ steps.date.outputs.date }}
           body: "Automated weekly update from OpenStreetMap"
           files: |
             /tmp/cameras.db.gz

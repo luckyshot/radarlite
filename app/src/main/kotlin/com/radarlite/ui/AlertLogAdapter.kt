@@ -28,7 +28,10 @@ class AlertLogAdapter(
         val entry = items[position]
         holder.time.text  = formatTime(entry.timestamp)
         holder.info.text  = formatType(entry)
-        holder.speed.text = entry.speedLimit?.let { "Limit $it" } ?: ""
+        holder.speed.text = listOfNotNull(
+            entry.speedLimit?.let { "Limit $it" },
+            entry.speedKmh?.let { "Speed ${it.toInt()}" }
+        ).joinToString(" · ")
         holder.itemView.isEnabled = entry.cameraLat != null && entry.cameraLon != null
         holder.itemView.setOnClickListener { if (holder.itemView.isEnabled) onClick(entry) }
     }

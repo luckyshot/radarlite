@@ -32,11 +32,11 @@ For a fork, override this without editing Kotlin:
 ./gradlew :app:assembleDebug -Pradarlite.dbVersionUrl=https://github.com/OWNER/REPO/releases/latest/download/version.json
 ```
 
-**Note on sounds:** Audio alerts are generated programmatically via `SoundManager.kt` using `AudioTrack`. No audio files are bundled. Warning alerts play one short 880 Hz tone and one short phrase; urgent alerts play one 500 ms, 1200 Hz tone. Each camera and hazard type can be switched off independently. When enabled, the app says `Over speed limit 50` if it approaches a camera with a known 50 km/h limit while travelling more than 3 km/h over it.
+**Note on sounds:** Audio alerts are generated programmatically via `SoundManager.kt` using `AudioTrack`. No audio files are bundled. Warning alerts play one short 880 Hz tone and one short phrase; urgent alerts play one 500 ms, 1200 Hz tone. Each camera and hazard type can be switched off independently. When enabled, the app says `Over speed limit 50` if it approaches a camera with a known numeric 50 km/h limit while travelling more than 3 km/h over it. Conditional, variable, and multi-value map limits are ignored.
 
 **Note on walking and heading:** Alerts are suppressed below 15 km/h, and wait for a passive fix with a valid travel heading rather than guessing a direction. The app can still show location status and nearby alerts while moving slowly.
 
-**Speed announcements:** The Interval dropdown can speak the current speed as only a number when it enters a new 5, 10, or 20 km/h band; it is disabled by default and never announces below 20 km/h. It uses the same fresh passive location fixes as camera alerts, so it does not add GPS or network use.
+**Speed announcements:** The Interval dropdown can speak the current speed as only a number when it enters a new 5, 10, or 20 km/h band; it is disabled by default and never announces below 20 km/h. It uses the same fresh passive location fixes as road alerts, so it does not add GPS or network use.
 
 **Note on database:** The app gracefully handles a missing bundled database by creating an empty schema. Tap "Check for update" on first run to download the full alert database. Manual checks contact the release metadata each time, then download the database only when a newer version exists. If monitoring is running, it reloads the database after a successful update. On launch, RadarLite prompts for an update when the database has not been checked for 7 days or more; choosing Skip suppresses the prompt for 24 hours.
 

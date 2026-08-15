@@ -56,7 +56,7 @@
     <string name="no_map_app">No map app available</string>
     <string name="db_missing_title">Download alert database?</string>
     <string name="db_missing_message">RadarLite needs an alert database before it can warn you.
-        Download it now? (4 MB)</string>
+        Download it now?</string>
     <string name="db_missing_download">Download</string>
     <string name="db_missing_later">Not now</string>
     <string name="db_stale_title">Update alert database?</string>
