@@ -69,7 +69,7 @@ class LocationStrategy(
             lat = loc.latitude,
             lon = loc.longitude,
             speedKmh = (loc.speed * 3.6f).coerceAtLeast(0f),
-            bearingDeg = loc.bearing,
+            bearingDeg = loc.takeIf { it.hasBearing() }?.bearing,
             accuracyM = loc.accuracy,
             timeMs = loc.time
         ))

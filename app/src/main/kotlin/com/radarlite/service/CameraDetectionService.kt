@@ -17,6 +17,8 @@ import com.radarlite.location.LocationState
 import com.radarlite.location.LocationStrategy
 import com.radarlite.util.GeoUtils
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 class CameraDetectionService : Service() {
 
@@ -51,6 +53,7 @@ class CameraDetectionService : Service() {
     private lateinit var appDb: AppDatabase
 
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val locationMutex = Mutex()
     private var locationIdleJob: Job? = null
     private var listenerRefreshJob: Job? = null
     private var notificationStatus: String? = null
@@ -67,7 +70,7 @@ class CameraDetectionService : Service() {
             soundManager,
             { AlertSettings.enabled(this, it) },
             { AlertSettings.overspeedEnabled(this) }
-        ) { cam, stage -> logAlert(cam, stage) }
+        ) { cam, speedKmh -> logAlert(cam, speedKmh) }
         locationStrategy = LocationStrategy(this) { state -> onLocationUpdate(state) }
 
         ServiceState.dbVersion.value     = cameraDb.getVersion() ?: "No database"
@@ -144,34 +147,40 @@ class CameraDetectionService : Service() {
         if (!isFreshFix(state)) return
         markLocationActive()
         scope.launch {
-            if (!monitoring) return@launch
-            val cameras = cameraDb.getCamerasNear(state.lat, state.lon, 600f)
+            // Passive callbacks can arrive together; preserve alert order and mutable engine state.
+            locationMutex.withLock {
+                if (!monitoring) return@withLock
+                val cameras = cameraDb.getCamerasNear(state.lat, state.lon, 600f)
+                if (!monitoring) return@withLock
 
-            announceSpeed(state.speedKmh)
-            // Alert speech follows optional speed speech, so a safety warning has priority.
-            alertEngine.process(state, cameras)
+                announceSpeed(state.speedKmh)
+                // Alert speech follows optional speed speech, so a safety warning has priority.
+                alertEngine.process(state, cameras)
 
-            // Keep the activity's status card in sync with each passive location fix.
-            ServiceState.lastLat.value = state.lat
-            ServiceState.lastLon.value = state.lon
-            ServiceState.bearingDeg.value = state.bearingDeg
-            ServiceState.accuracyM.value = state.accuracyM
-            ServiceState.lastFixMs.value = state.timeMs
-            ServiceState.speedKmh.value = state.speedKmh
-            ServiceState.camerasNearby.value = cameras.size
-            ServiceState.closestCameraDistanceM.value = cameras.minOfOrNull {
-                GeoUtils.haversine(state.lat, state.lon, it.lat, it.lon)
+                // Keep the activity's status card in sync with each passive location fix.
+                ServiceState.lastLat.value = state.lat
+                ServiceState.lastLon.value = state.lon
+                ServiceState.bearingDeg.value = state.bearingDeg
+                ServiceState.accuracyM.value = state.accuracyM
+                ServiceState.lastFixMs.value = state.timeMs
+                ServiceState.speedKmh.value = state.speedKmh
+                ServiceState.camerasNearby.value = cameras.size
+                ServiceState.closestCameraDistanceM.value = cameras.minOfOrNull {
+                    GeoUtils.haversine(state.lat, state.lon, it.lat, it.lon)
+                }
+                ServiceState.gpsMode.value = getString(R.string.gps_passive)
             }
-            ServiceState.gpsMode.value = getString(R.string.gps_passive)
         }
     }
 
     private fun reloadDatabase() {
         scope.launch {
-            cameraDb.reopen()
-            alertEngine.reset()
-            ServiceState.dbVersion.value = cameraDb.getVersion() ?: "No database"
-            ServiceState.dbCameraCount.value = cameraDb.getCameraCount()
+            locationMutex.withLock {
+                cameraDb.reopen()
+                alertEngine.reset()
+                ServiceState.dbVersion.value = cameraDb.getVersion() ?: "No database"
+                ServiceState.dbCameraCount.value = cameraDb.getCameraCount()
+            }
         }
     }
 
@@ -222,11 +231,11 @@ class CameraDetectionService : Service() {
         }
     }
 
-    private fun logAlert(cam: Camera, @Suppress("UNUSED_PARAMETER") stage: AlertStage) {
+    private fun logAlert(cam: Camera, speedKmh: Float) {
         scope.launch(Dispatchers.IO) {
             appDb.alertLogDao().insert(AlertLogEntry(
                 cameraId    = cam.id,
-                speedKmh    = ServiceState.speedKmh.value,
+                speedKmh    = speedKmh,
                 speedLimit  = cam.speedLimit,
                 cameraType  = cam.type,
                 cameraLat   = cam.lat,

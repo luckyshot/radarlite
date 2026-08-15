@@ -30,6 +30,8 @@ object DatabaseUpdater {
     suspend fun checkAndUpdate(context: Context): Result = withContext(Dispatchers.IO) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val dbHelper = CameraDbHelper(context)
+        val tmpGz = File(context.cacheDir, "cameras_update.db.gz")
+        val tmpDb = File(context.cacheDir, "cameras_update.db")
         try {
             val remote = fetchVersionInfo() ?: return@withContext Result.FAILED
             dbHelper.open()
@@ -45,14 +47,10 @@ object DatabaseUpdater {
                 return@withContext Result.UP_TO_DATE
             }
 
-            val tmpGz = File(context.cacheDir, "cameras_update.db.gz")
-            val tmpDb = File(context.cacheDir, "cameras_update.db")
-
             download(remote.url, tmpGz)
             decompress(tmpGz, tmpDb)
 
             if (!validateDb(tmpDb)) {
-                tmpGz.delete(); tmpDb.delete()
                 return@withContext Result.FAILED
             }
 
@@ -62,11 +60,12 @@ object DatabaseUpdater {
                 .putLong(KEY_LAST_CHECK, System.currentTimeMillis())
                 .apply()
 
-            tmpGz.delete(); tmpDb.delete()
             Result.UPDATED
         } catch (e: Exception) {
             Result.FAILED
         } finally {
+            tmpGz.delete()
+            tmpDb.delete()
             dbHelper.close()
         }
     }

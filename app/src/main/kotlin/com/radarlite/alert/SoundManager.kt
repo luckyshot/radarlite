@@ -46,13 +46,13 @@ class SoundManager(context: Context) {
     private fun warningPhrase(speedLimit: Int?, cameraType: String?, overspeed: Boolean): String? {
         if (overspeed && speedLimit != null) return "Over speed limit $speedLimit"
         return when (cameraType) {
-        "red_light"     -> "Red light"
-        "average_speed" -> speedLimit?.let { "Average speed zone $it" } ?: "Average speed zone"
-        "sharp_curve" -> "Sharp curve ahead"
-        "dangerous_junction" -> "Dangerous junction ahead"
-        "level_crossing" -> "Level crossing ahead"
-        "traffic_calming" -> "Traffic calming ahead"
-        else            -> speedLimit?.let { "Speed limit $it" } ?: "Speed limit"
+            "red_light" -> "Red light"
+            "average_speed" -> speedLimit?.let { "Average speed zone $it" } ?: "Average speed zone"
+            "sharp_curve" -> "Sharp curve ahead"
+            "dangerous_junction" -> "Dangerous junction ahead"
+            "level_crossing" -> "Level crossing ahead"
+            "traffic_calming" -> "Traffic calming ahead"
+            else -> speedLimit?.let { "Speed limit $it" } ?: "Speed limit"
         }
     }
 
