@@ -9,6 +9,7 @@ import androidx.core.app.NotificationCompat
 import com.radarlite.MainActivity
 import com.radarlite.R
 import com.radarlite.ServiceState
+import com.radarlite.AlertSettings
 import com.radarlite.SpeedAnnouncements
 import com.radarlite.alert.*
 import com.radarlite.db.*
@@ -62,7 +63,11 @@ class CameraDetectionService : Service() {
         cameraDb     = CameraDbHelper(this).apply { open() }
         appDb        = AppDatabase.get(this)
         soundManager = SoundManager(this)
-        alertEngine  = AlertEngine(soundManager) { cam, stage -> logAlert(cam, stage) }
+        alertEngine  = AlertEngine(
+            soundManager,
+            { AlertSettings.enabled(this, it) },
+            { AlertSettings.overspeedEnabled(this) }
+        ) { cam, stage -> logAlert(cam, stage) }
         locationStrategy = LocationStrategy(this) { state -> onLocationUpdate(state) }
 
         ServiceState.dbVersion.value     = cameraDb.getVersion() ?: "No database"
@@ -142,8 +147,9 @@ class CameraDetectionService : Service() {
             if (!monitoring) return@launch
             val cameras = cameraDb.getCamerasNear(state.lat, state.lon, 600f)
 
-            alertEngine.process(state, cameras)
             announceSpeed(state.speedKmh)
+            // Alert speech follows optional speed speech, so a safety warning has priority.
+            alertEngine.process(state, cameras)
 
             // Keep the activity's status card in sync with each passive location fix.
             ServiceState.lastLat.value = state.lat

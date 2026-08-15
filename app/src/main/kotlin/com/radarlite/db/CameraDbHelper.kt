@@ -96,7 +96,7 @@ class CameraDbHelper(private val context: Context) {
         val swap = File(dest.parentFile, "cameras.db.new")
         // Replace by rename so any already-open reader keeps the old file handle until it reopens.
         newFile.copyTo(swap, overwrite = true)
-        if (dest.exists() && !dest.delete()) throw IllegalStateException("Could not replace camera database")
+        if (dest.exists() && !dest.delete()) throw IllegalStateException("Could not replace alert database")
         if (!swap.renameTo(dest)) {
             swap.copyTo(dest, overwrite = true)
             swap.delete()

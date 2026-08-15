@@ -16,25 +16,28 @@
     <string name="no_database">No database</string>
     <string name="no_alerts">No alerts yet</string>
     <string name="disclaimer_title">Legal notice</string>
-    <string name="disclaimer_message">Speed camera warning apps are illegal in some countries. You
+    <string name="disclaimer_message">Road-alert apps are illegal or restricted in some countries. You
         are responsible for checking the laws in your region before use.</string>
     <string name="disclaimer_ok">I understand</string>
     <string name="notification_title">RadarLite</string>
     <string name="sound_test_title">SOUND TEST</string>
-    <string name="btn_test_warning">Warning</string>
+    <string name="btn_test_camera">Camera</string>
+    <string name="btn_test_overspeed">Overspeed</string>
+    <string name="btn_test_curve">Curve</string>
+    <string name="btn_test_junction">Junction</string>
+    <string name="btn_test_crossing">Crossing</string>
     <string name="btn_test_urgent">Urgent</string>
     <string name="guide_title">QUICK GUIDE</string>
     <string name="guide_passive">RadarLite only activates when your GPS is actively being used by a
         navigation app, making the app very battery efficient but requires you to have Waze, Google
         Maps or another GPS-activating app in order to receive alerts.</string>
-    <string name="guide_sound">A first warning sound (3 short beeps) will sound at about 12 seconds
-        of the camera, followed by a short phrase, for example "Speed limit 50", "Red light", or
-        "Average speed zone 50". Once you get closer to the camera, an Urgent sound (single 1
-        second, higher-pitched beep) will sound.</string>
+    <string name="guide_sound">A first warning is one short tone followed by a short phrase, such
+        as "Speed limit 50", "Sharp curve ahead", or "Level crossing ahead". A closer urgent
+        warning is a short higher-pitched tone.</string>
     <string name="about_title">ABOUT</string>
     <string name="about_privacy">Privacy policy</string>
     <string name="about_source">Source code</string>
-    <string name="about_data">Camera data: OpenStreetMap</string>
+    <string name="about_data">Alert data: OpenStreetMap</string>
     <string name="url_privacy">https://luckyshot.github.io/radarlite/privacy.html</string>
     <string name="url_source">https://github.com/luckyshot/radarlite</string>
     <string name="url_osm">https://www.openstreetmap.org/copyright</string>
@@ -43,7 +46,7 @@
     <string name="perm_bg_open_settings">Open Settings</string>
     <string name="cancel">Cancel</string>
     <string name="perm_bg_message">RadarLite accesses location in the background to detect nearby
-        speed cameras and show alerts even when the app is closed or not in use. Your location stays
+        road alerts and show warnings even when the app is closed or not in use. Your location stays
         on your device and is not shared. Select Location and Allow all the time.</string>
     <string name="updating_db">Checking for database update…</string>
     <string name="db_up_to_date">Database is up to date</string>
@@ -51,13 +54,13 @@
     <string name="db_update_failed">Update failed. Try again later.</string>
     <string name="no_browser">No browser available</string>
     <string name="no_map_app">No map app available</string>
-    <string name="db_missing_title">Download camera database?</string>
-    <string name="db_missing_message">RadarLite needs a camera database before it can alert you.
+    <string name="db_missing_title">Download alert database?</string>
+    <string name="db_missing_message">RadarLite needs an alert database before it can warn you.
         Download it now? (4 MB)</string>
     <string name="db_missing_download">Download</string>
     <string name="db_missing_later">Not now</string>
-    <string name="db_stale_title">Update camera database?</string>
-    <string name="db_stale_message">The camera database has not been checked for 7 days or more.
+    <string name="db_stale_title">Update alert database?</string>
+    <string name="db_stale_message">The alert database has not been checked for 7 days or more.
         Update it now?</string>
     <string name="db_stale_update">Update</string>
     <string name="db_stale_skip">Skip</string>

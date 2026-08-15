@@ -75,6 +75,52 @@
             </LinearLayout>
         </LinearLayout>
 
+        <!-- Categories are independent so motorists hear only the alerts they want. -->
+        <LinearLayout style="@style/ScreenCard">
+            <TextView style="@style/SectionLabel" android:text="ALERTS" />
+
+            <LinearLayout style="@style/StatusRow">
+                <TextView style="@style/RowLabel" android:text="Speed cameras" />
+                <androidx.appcompat.widget.SwitchCompat android:id="@+id/switchSpeedCamera"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            </LinearLayout>
+            <LinearLayout style="@style/StatusRow">
+                <TextView style="@style/RowLabel" android:text="Red lights" />
+                <androidx.appcompat.widget.SwitchCompat android:id="@+id/switchRedLight"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            </LinearLayout>
+            <LinearLayout style="@style/StatusRow">
+                <TextView style="@style/RowLabel" android:text="Average speed zones" />
+                <androidx.appcompat.widget.SwitchCompat android:id="@+id/switchAverageSpeed"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            </LinearLayout>
+            <LinearLayout style="@style/StatusRow">
+                <TextView style="@style/RowLabel" android:text="Sharp curves" />
+                <androidx.appcompat.widget.SwitchCompat android:id="@+id/switchSharpCurve"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            </LinearLayout>
+            <LinearLayout style="@style/StatusRow">
+                <TextView style="@style/RowLabel" android:text="Dangerous junctions" />
+                <androidx.appcompat.widget.SwitchCompat android:id="@+id/switchDangerousJunction"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            </LinearLayout>
+            <LinearLayout style="@style/StatusRow">
+                <TextView style="@style/RowLabel" android:text="Level crossings" />
+                <androidx.appcompat.widget.SwitchCompat android:id="@+id/switchLevelCrossing"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            </LinearLayout>
+            <LinearLayout style="@style/StatusRow">
+                <TextView style="@style/RowLabel" android:text="Traffic calming" />
+                <androidx.appcompat.widget.SwitchCompat android:id="@+id/switchTrafficCalming"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            </LinearLayout>
+            <LinearLayout style="@style/StatusRow">
+                <TextView style="@style/RowLabel" android:text="Over a camera limit" />
+                <androidx.appcompat.widget.SwitchCompat android:id="@+id/switchOverspeed"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            </LinearLayout>
+        </LinearLayout>
+
         <!-- Live drive state -->
         <LinearLayout style="@style/ScreenCard">
             <TextView style="@style/SectionLabel" android:text="LIVE DRIVE" />
@@ -90,7 +136,7 @@
                 </LinearLayout>
 
                 <LinearLayout style="@style/MetricTile" android:layout_marginStart="6dp">
-                    <TextView style="@style/MetricLabel" android:text="Closest" />
+                    <TextView style="@style/MetricLabel" android:text="Closest alert" />
                     <TextView android:id="@+id/tvClosestCamera" style="@style/MetricValue"
                         android:text="—" />
                 </LinearLayout>
@@ -109,7 +155,7 @@
                 </LinearLayout>
 
                 <LinearLayout style="@style/MetricTile" android:layout_marginStart="6dp">
-                    <TextView style="@style/MetricLabel" android:text="Cameras" />
+                    <TextView style="@style/MetricLabel" android:text="Alerts" />
                     <TextView android:id="@+id/tvCamerasNear" style="@style/MetricValue"
                         android:text="0" />
                 </LinearLayout>
@@ -147,7 +193,7 @@
                 <TextView android:id="@+id/tvDbVersion" style="@style/RowValue" android:text="—" />
             </LinearLayout>
             <LinearLayout style="@style/StatusRow">
-                <TextView style="@style/RowLabel" android:text="Cameras" />
+                <TextView style="@style/RowLabel" android:text="Points" />
                 <TextView android:id="@+id/tvDbCount" style="@style/RowValue" android:text="—" />
             </LinearLayout>
             <LinearLayout style="@style/StatusRow">
@@ -197,10 +243,48 @@
                 android:orientation="horizontal">
 
                 <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnTestWarning"
+                    android:id="@+id/btnTestCamera"
                     style="@style/SoundTestButton"
                     android:layout_marginEnd="6dp"
-                    android:text="@string/btn_test_warning" />
+                    android:text="@string/btn_test_camera" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnTestOverspeed"
+                    style="@style/SoundTestButton"
+                    android:layout_marginStart="6dp"
+                    android:text="@string/btn_test_overspeed" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnTestCurve"
+                    style="@style/SoundTestButton"
+                    android:layout_marginEnd="6dp"
+                    android:text="@string/btn_test_curve" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnTestJunction"
+                    style="@style/SoundTestButton"
+                    android:layout_marginStart="6dp"
+                    android:text="@string/btn_test_junction" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnTestCrossing"
+                    style="@style/SoundTestButton"
+                    android:layout_marginEnd="6dp"
+                    android:text="@string/btn_test_crossing" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnTestUrgent"

@@ -17,7 +17,7 @@ class RadarLiteApp : Application() {
             "RadarLite",
             NotificationManager.IMPORTANCE_LOW
         ).apply {
-            description = "Speed camera monitoring service"
+            description = "Road alert monitoring service"
             setSound(null, null)
             enableVibration(false)
         }

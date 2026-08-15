@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Fetch speed camera data from OpenStreetMap via Overpass API.
+// Fetch explicit, lightweight road-alert points from OpenStreetMap via Overpass API.
 import { writeFileSync } from 'fs';
 
 const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
@@ -10,6 +10,10 @@ const QUERY = `
 (
   relation["type"="enforcement"]["enforcement"~"maxspeed|average_speed"];
   node["highway"="speed_camera"];
+  node["hazard"="curve"];
+  node["hazard"="dangerous_junction"];
+  node["railway"="level_crossing"];
+  node["traffic_calming"];
 );
 out center;
 `;
@@ -47,6 +51,10 @@ function parseSpeed(raw) {
 }
 
 function classifyType(tags) {
+  if (tags.hazard === 'curve') return 'sharp_curve';
+  if (tags.hazard === 'dangerous_junction') return 'dangerous_junction';
+  if (tags.railway === 'level_crossing') return 'level_crossing';
+  if (tags.traffic_calming) return 'traffic_calming';
   const e = tags.enforcement || '';
   if (e.includes('traffic_signals') || tags['camera:type'] === 'red_light') return 'red_light';
   if (e.includes('average_speed')) return 'average_speed';
@@ -71,15 +79,17 @@ for (const el of elements) {
   const lat = el.lat ?? el.center?.lat;
   const lon = el.lon ?? el.center?.lon;
   if (lat == null || lon == null) continue;
-  const key = `${Math.round(lat * 1e5)},${Math.round(lon * 1e5)}`;
+  const tags = el.tags || {};
+  const type = classifyType(tags);
+  // Different alert types may legitimately share a mapped position.
+  const key = `${type}:${Math.round(lat * 1e5)},${Math.round(lon * 1e5)}`;
   if (seen.has(key)) continue;
   seen.add(key);
-  const tags = el.tags || {};
   cameras.push({
     lat,
     lon,
     speed_limit: parseSpeed(tags.maxspeed),
-    type:        classifyType(tags),
+    type,
     direction:   parseDirection(tags.direction),
     sources:     'osm'
   });

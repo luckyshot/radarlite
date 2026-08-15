@@ -89,6 +89,7 @@ class MainActivity : AppCompatActivity() {
         setupRecyclerView()
         setupSwitch()
         setupSpeedAnnouncements()
+        setupAlertToggles()
         setupUpdateButton()
         setupSoundButtons()
         setupLastFixLink()
@@ -143,11 +144,38 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupSoundButtons() {
-        binding.btnTestWarning.setOnClickListener {
-            soundManager.play(AlertStage.WARNING, speedLimit = 50)
+    private fun setupAlertToggles() {
+        val toggles = mapOf(
+            binding.switchSpeedCamera to AlertSettings.SPEED,
+            binding.switchRedLight to AlertSettings.RED_LIGHT,
+            binding.switchAverageSpeed to AlertSettings.AVERAGE_SPEED,
+            binding.switchSharpCurve to AlertSettings.SHARP_CURVE,
+            binding.switchDangerousJunction to AlertSettings.DANGEROUS_JUNCTION,
+            binding.switchLevelCrossing to AlertSettings.LEVEL_CROSSING,
+            binding.switchTrafficCalming to AlertSettings.TRAFFIC_CALMING
+        )
+        toggles.forEach { (toggle, type) ->
+            toggle.isChecked = AlertSettings.enabled(this, type)
+            toggle.setOnCheckedChangeListener { _, checked -> AlertSettings.setEnabled(this, type, checked) }
         }
+        binding.switchOverspeed.isChecked = AlertSettings.overspeedEnabled(this)
+        binding.switchOverspeed.setOnCheckedChangeListener { _, checked ->
+            AlertSettings.setOverspeedEnabled(this, checked)
+        }
+    }
+
+    private fun setupSoundButtons() {
+        setupSoundTest(binding.btnTestCamera, "speed", speedLimit = 50)
+        setupSoundTest(binding.btnTestOverspeed, "speed", speedLimit = 50, overspeed = true)
+        setupSoundTest(binding.btnTestCurve, "sharp_curve")
+        setupSoundTest(binding.btnTestJunction, "dangerous_junction")
+        setupSoundTest(binding.btnTestCrossing, "level_crossing")
         binding.btnTestUrgent.setOnClickListener { soundManager.play(AlertStage.URGENT) }
+    }
+
+    // All warning previews use the same production sound path.
+    private fun setupSoundTest(button: View, type: String, speedLimit: Int? = null, overspeed: Boolean = false) {
+        button.setOnClickListener { soundManager.play(AlertStage.WARNING, speedLimit, type, overspeed) }
     }
 
     private fun setupLastFixLink() {
@@ -456,6 +484,10 @@ class MainActivity : AppCompatActivity() {
         val type = when (entry.cameraType) {
             "red_light"     -> "Red light"
             "average_speed" -> "Average speed zone"
+            "sharp_curve" -> "Sharp curve"
+            "dangerous_junction" -> "Dangerous junction"
+            "level_crossing" -> "Level crossing"
+            "traffic_calming" -> "Traffic calming"
             else            -> "Speed limit"
         }
         return entry.speedLimit?.let { "$type $it" } ?: type

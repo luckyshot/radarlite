@@ -56,7 +56,8 @@ for (const cam of osm) {
   let dupeIdx = null;
   for (const key of neighborKeys(cam.lat, cam.lon)) {
     for (const idx of (grid.get(key) || [])) {
-      if (haversine(cam.lat, cam.lon, merged[idx].lat, merged[idx].lon) <= DEDUP_RADIUS_M) {
+      if (cam.type === merged[idx].type &&
+          haversine(cam.lat, cam.lon, merged[idx].lat, merged[idx].lon) <= DEDUP_RADIUS_M) {
         dupeIdx = idx;
         break;
       }

@@ -18,17 +18,23 @@ class SoundManager(context: Context) {
     @Volatile private var ttsReady = false
     @Volatile private var pendingSpeech: String? = null
 
-    fun play(stage: AlertStage, speedLimit: Int? = null, cameraType: String? = null) {
+    fun play(
+        stage: AlertStage,
+        speedLimit: Int? = null,
+        cameraType: String? = null,
+        overspeed: Boolean = false
+    ) {
         if (audioManager.ringerMode == AudioManager.RINGER_MODE_SILENT) return
         scope.launch {
             when (stage) {
                 AlertStage.WARNING -> {
-                    burst(freqHz = 880f, count = 3, durationMs = 90, gapMs = 220)
-                    warningPhrase(speedLimit, cameraType)?.let { speak(it) }
+                    // A single short tone is noticeable without competing with navigation instructions.
+                    beep(freqHz = 880f, durationMs = 150)
+                    warningPhrase(speedLimit, cameraType, overspeed)?.let { speak(it) }
                 }
                 AlertStage.URGENT  -> {
                     clearSpeech()
-                    beep(freqHz = 1_200f, durationMs = 1000)
+                    beep(freqHz = 1_200f, durationMs = 500)
                 }
             }
         }
@@ -37,17 +43,16 @@ class SoundManager(context: Context) {
     // Speed announcements intentionally have no tone: only the selected number is spoken.
     fun speakSpeed(speedKmh: Int) = speak(speedKmh.toString())
 
-    private fun warningPhrase(speedLimit: Int?, cameraType: String?): String? = when (cameraType) {
+    private fun warningPhrase(speedLimit: Int?, cameraType: String?, overspeed: Boolean): String? {
+        if (overspeed && speedLimit != null) return "Over speed limit $speedLimit"
+        return when (cameraType) {
         "red_light"     -> "Red light"
         "average_speed" -> speedLimit?.let { "Average speed zone $it" } ?: "Average speed zone"
+        "sharp_curve" -> "Sharp curve ahead"
+        "dangerous_junction" -> "Dangerous junction ahead"
+        "level_crossing" -> "Level crossing ahead"
+        "traffic_calming" -> "Traffic calming ahead"
         else            -> speedLimit?.let { "Speed limit $it" } ?: "Speed limit"
-    }
-
-    // One alert burst is intentionally short so repeated bursts are easy to count.
-    private suspend fun burst(freqHz: Float, count: Int, durationMs: Int, gapMs: Long) {
-        repeat(count) { index ->
-            beep(freqHz, durationMs)
-            if (index < count - 1) delay(gapMs)
         }
     }
 

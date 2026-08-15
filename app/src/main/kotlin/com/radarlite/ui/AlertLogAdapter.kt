@@ -51,6 +51,10 @@ class AlertLogAdapter(
     private fun formatType(entry: AlertLogEntry): String = when (entry.cameraType) {
         "red_light"     -> "Red light"
         "average_speed" -> "Average speed zone"
+        "sharp_curve" -> "Sharp curve"
+        "dangerous_junction" -> "Dangerous junction"
+        "level_crossing" -> "Level crossing"
+        "traffic_calming" -> "Traffic calming"
         else            -> "Speed limit"
     }
 }

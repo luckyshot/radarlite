@@ -6,10 +6,14 @@ import com.radarlite.util.GeoUtils
 
 class AlertEngine(
     private val soundManager: SoundManager,
+    private val isTypeEnabled: (String) -> Boolean,
+    private val isOverspeedEnabled: () -> Boolean,
     private val onAlert: (Camera, AlertStage) -> Unit
 ) {
     companion object {
         private const val MIN_ALERT_SPEED_KMH = 15f
+        private const val OVERSPEED_TOLERANCE_KMH = 3f
+        private val CAMERA_TYPES = setOf("speed", "red_light", "average_speed")
     }
 
     // camera id -> highest stage already alerted this pass
@@ -24,11 +28,12 @@ class AlertEngine(
         // Ignore walking and other very slow movement; GPS heading and distance trends are too noisy here.
         if (state.speedKmh < MIN_ALERT_SPEED_KMH) return
 
-        val activeIds = cameras.mapTo(mutableSetOf()) { it.id }
+        val enabledCameras = cameras.filter { isTypeEnabled(it.type) }
+        val activeIds = enabledCameras.mapTo(mutableSetOf()) { it.id }
         alerted.keys.retainAll(activeIds)
         distHistory.keys.retainAll(activeIds)
 
-        for (cam in cameras) {
+        for (cam in enabledCameras) {
             val dist = GeoUtils.haversine(state.lat, state.lon, cam.lat, cam.lon)
 
             val history = distHistory.getOrPut(cam.id) { ArrayDeque(4) }
@@ -53,7 +58,10 @@ class AlertEngine(
                 soundManager.play(
                     target,
                     speedLimit = if (target == AlertStage.WARNING) cam.speedLimit else null,
-                    cameraType = if (target == AlertStage.WARNING) cam.type else null
+                    cameraType = if (target == AlertStage.WARNING) cam.type else null,
+                    overspeed = target == AlertStage.WARNING && cam.type in CAMERA_TYPES &&
+                        isOverspeedEnabled() &&
+                        cam.speedLimit?.let { state.speedKmh > it + OVERSPEED_TOLERANCE_KMH } == true
                 )
                 onAlert(cam, target)
             }
