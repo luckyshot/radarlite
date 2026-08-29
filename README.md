@@ -4,6 +4,14 @@ Lightweight Android road-alert app. All features are free, with no ads, subscrip
 
 RadarLite is free and open source. Store listing assets and Play review notes live in `store-assets/`. The public GitHub Pages site lives in `docs/` and uses plain-language copy for non-technical users.
 
+## Quick info
+
+Build APK:
+
+```sh
+./gradlew :app:assembleDebug -Pradarlite.dbVersionUrl=https://github.com/OWNER/REPO/releases/latest/download/version.json
+```
+
 ## Status
 
 RadarLite is early-stage software. Validate the generated alert database and local legal requirements before using it on public roads.
