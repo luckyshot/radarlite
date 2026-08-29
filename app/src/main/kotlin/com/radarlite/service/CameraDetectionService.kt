@@ -11,6 +11,7 @@ import com.radarlite.R
 import com.radarlite.ServiceState
 import com.radarlite.AlertSettings
 import com.radarlite.SpeedAnnouncements
+import com.radarlite.SpeedAnnouncementTracker
 import com.radarlite.alert.*
 import com.radarlite.db.*
 import com.radarlite.location.LocationState
@@ -58,8 +59,7 @@ class CameraDetectionService : Service() {
     private var listenerRefreshJob: Job? = null
     private var notificationStatus: String? = null
     private var monitoring = false
-    private var lastSpeedInterval = 0
-    private var lastAnnouncedSpeed: Int? = null
+    private val speedAnnouncements = SpeedAnnouncementTracker()
     private var lastProcessedFixMs = 0L
 
     override fun onCreate() {
@@ -124,7 +124,7 @@ class CameraDetectionService : Service() {
         locationIdleJob?.cancel()
         listenerRefreshJob?.cancel()
         alertEngine.reset()
-        lastAnnouncedSpeed = null
+        speedAnnouncements.reset()
         lastProcessedFixMs = 0L
         ServiceState.isRunning.value  = false
         ServiceState.isReceivingLocation.value = false
@@ -190,21 +190,8 @@ class CameraDetectionService : Service() {
         state.timeMs > 0 && System.currentTimeMillis() - state.timeMs <= MAX_PASSIVE_FIX_AGE_MS
 
     private fun announceSpeed(speedKmh: Float) {
-        val interval = SpeedAnnouncements.interval(this)
-        // A preference change begins a new announcement sequence on the next passive fix.
-        if (interval != lastSpeedInterval) {
-            lastSpeedInterval = interval
-            lastAnnouncedSpeed = null
-        }
-        if (interval == 0 || speedKmh < SpeedAnnouncements.MIN_SPEED_KMH) {
-            lastAnnouncedSpeed = null
-            return
-        }
-        val roundedSpeed = (speedKmh.toInt() / interval) * interval
-        if (roundedSpeed != lastAnnouncedSpeed) {
-            lastAnnouncedSpeed = roundedSpeed
-            soundManager.speakSpeed(roundedSpeed)
-        }
+        speedAnnouncements.next(speedKmh, SpeedAnnouncements.selected(this))
+            ?.let(soundManager::speakSpeed)
     }
 
     private fun markLocationActive() {

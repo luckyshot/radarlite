@@ -5,7 +5,9 @@ import android.media.*
 import android.os.Handler
 import android.os.Looper
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import kotlinx.coroutines.*
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.*
 import java.util.Locale
 
@@ -15,8 +17,14 @@ class SoundManager(context: Context) {
     private val mainHandler = Handler(Looper.getMainLooper())
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var tts: TextToSpeech? = null
-    @Volatile private var ttsReady = false
-    @Volatile private var pendingSpeech: String? = null
+    private var ttsReady = false
+    private var pendingSpeech: Speech? = null
+    private var activeAlertSpeechId: String? = null
+    private var blockSpeedSpeech = false
+    private val alertId = AtomicInteger()
+    private val utteranceId = AtomicInteger()
+
+    private data class Speech(val text: String, val alert: Int? = null)
 
     fun play(
         stage: AlertStage,
@@ -25,16 +33,18 @@ class SoundManager(context: Context) {
         overspeed: Boolean = false
     ) {
         if (audioManager.ringerMode == AudioManager.RINGER_MODE_SILENT) return
+        val id = alertId.incrementAndGet()
+        reserveSpeechForAlert(id)
         scope.launch {
             when (stage) {
                 AlertStage.WARNING -> {
                     // A single short tone is noticeable without competing with navigation instructions.
                     beep(freqHz = 880f, durationMs = 150)
-                    warningPhrase(speedLimit, cameraType, overspeed)?.let { speak(it) }
+                    warningPhrase(speedLimit, cameraType, overspeed)?.let { speak(it, id) }
                 }
                 AlertStage.URGENT  -> {
-                    clearSpeech()
                     beep(freqHz = 1_200f, durationMs = 500)
+                    finishAlert(id)
                 }
             }
         }
@@ -56,11 +66,30 @@ class SoundManager(context: Context) {
         }
     }
 
-    private fun speak(text: String) {
-        // TTS starts only when needed; alerts still beep if the engine is not ready yet.
+    private fun reserveSpeechForAlert(id: Int) {
         mainHandler.post {
-            if (ttsReady) sayNow(text) else {
-                pendingSpeech = text
+            if (id != alertId.get()) return@post
+            blockSpeedSpeech = true
+            pendingSpeech = null
+            activeAlertSpeechId = null
+            tts?.stop()
+        }
+    }
+
+    private fun finishAlert(id: Int) {
+        mainHandler.post {
+            if (id == alertId.get()) blockSpeedSpeech = false
+        }
+    }
+
+    private fun speak(text: String, alert: Int? = null) {
+        // Alerts reserve speech before their tone, so a speed update cannot interrupt them.
+        mainHandler.post {
+            if (alert != null && alert != alertId.get()) return@post
+            if (alert == null && blockSpeedSpeech) return@post
+            val speech = Speech(text, alert)
+            if (ttsReady) sayNow(speech) else {
+                pendingSpeech = speech
                 ensureTts()
             }
         }
@@ -73,6 +102,7 @@ class SoundManager(context: Context) {
                 ttsReady = status == TextToSpeech.SUCCESS
                 if (!ttsReady) {
                     tts = null
+                    blockSpeedSpeech = false
                     pendingSpeech = null
                     return@post
                 }
@@ -81,20 +111,35 @@ class SoundManager(context: Context) {
                     .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
                     .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                     .build())
-                pendingSpeech?.let { sayNow(it) }
+                tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+                    override fun onStart(utteranceId: String) = Unit
+
+                    override fun onDone(utteranceId: String) {
+                        mainHandler.post {
+                            if (utteranceId == activeAlertSpeechId) {
+                                activeAlertSpeechId = null
+                                blockSpeedSpeech = false
+                            }
+                        }
+                    }
+
+                    @Deprecated("Deprecated in Java")
+                    override fun onError(utteranceId: String) = onDone(utteranceId)
+                })
+                pendingSpeech?.let(::sayNow)
                 pendingSpeech = null
             }
         }
     }
 
-    private fun sayNow(text: String) {
-        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "radarlite_limit")
-    }
-
-    private fun clearSpeech() {
-        mainHandler.post {
-            pendingSpeech = null
-            tts?.stop()
+    private fun sayNow(speech: Speech) {
+        val id = "radarlite_${utteranceId.incrementAndGet()}"
+        if (speech.alert != null) activeAlertSpeechId = id
+        if (tts?.speak(speech.text, TextToSpeech.QUEUE_FLUSH, null, id) == TextToSpeech.ERROR) {
+            if (id == activeAlertSpeechId) {
+                activeAlertSpeechId = null
+                blockSpeedSpeech = false
+            }
         }
     }
 
@@ -141,6 +186,8 @@ class SoundManager(context: Context) {
     fun release() {
         mainHandler.post {
             pendingSpeech = null
+            activeAlertSpeechId = null
+            blockSpeedSpeech = false
             ttsReady = false
             tts?.shutdown()
             tts = null

@@ -64,14 +64,12 @@
         <!-- This affects only speech; monitoring remains passive and battery-friendly. -->
         <LinearLayout style="@style/ScreenCard">
             <TextView style="@style/SectionLabel" android:text="SPEED ANNOUNCEMENTS" />
-            <LinearLayout style="@style/StatusRow">
-                <TextView style="@style/RowLabel" android:text="Interval" />
-                <Spinner
-                    android:id="@+id/spinnerSpeedAnnouncements"
-                    android:layout_width="wrap_content"
-                    android:layout_height="48dp"
-                    android:entries="@array/speed_announcement_intervals" />
-            </LinearLayout>
+            <!-- Checkboxes are added from the one shared list of supported speeds. -->
+            <LinearLayout
+                android:id="@+id/speedAnnouncementOptions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
         </LinearLayout>
 
         <!-- Categories are independent so motorists hear only the alerts they want. -->

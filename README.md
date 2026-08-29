@@ -6,10 +6,10 @@ RadarLite is free and open source. Store listing assets and Play review notes li
 
 ## Quick info
 
-Build APK:
-
 ```sh
 ./gradlew :app:assembleDebug -Pradarlite.dbVersionUrl=https://github.com/OWNER/REPO/releases/latest/download/version.json
+cp app/build/outputs/apk/debug/app-debug.apk ~/Transfer/radarlite.apk
+adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
 ## Status
@@ -44,7 +44,7 @@ For a fork, override this without editing Kotlin:
 
 **Note on walking and heading:** Alerts are suppressed below 15 km/h, and wait for a passive fix with a valid travel heading rather than guessing a direction. The app can still show location status and nearby alerts while moving slowly.
 
-**Speed announcements:** The Interval dropdown can speak the current speed as only a number when it enters a new 5, 10, or 20 km/h band; it is disabled by default and never announces below 20 km/h. It uses the same fresh passive location fixes as road alerts, so it does not add GPS or network use.
+**Speed announcements:** Select any of 30, 50, 60, 80, 90, 100, 110, 120, or 130 km/h. While accelerating, the app announces a selected speed once it is exceeded by 5 km/h (for example, 99 to 106 announces 100); it never announces while slowing down. A sparse passive location fix that passes several selections announces only the highest one, so speech stays brief. All speeds are off by default, and announcements use the same fresh passive location fixes as road alerts, so they do not add GPS or network use. Road alerts always take priority over a speed announcement.
 
 **Note on database:** The app gracefully handles a missing bundled database by creating an empty schema. Tap "Check for update" on first run to download the full alert database. Manual checks contact the release metadata each time, then download the database only when a newer version exists. If monitoring is running, it reloads the database after a successful update. On launch, RadarLite prompts for an update when the database has not been checked for 7 days or more; choosing Skip suppresses the prompt for 24 hours.
 
