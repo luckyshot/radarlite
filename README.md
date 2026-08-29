@@ -47,7 +47,7 @@ To bundle an initial database, run the pipeline locally once and copy the result
 1. Fork this repo
 2. Make sure GitHub Actions has write permission for releases: Settings > Actions > General > Workflow permissions > Read and write permissions
 3. The workflow runs every Sunday at 03:00 UTC. Trigger manually via Actions > Update Alert Database > Run workflow
-4. The workflow publishes `cameras.db.gz` and `version.json` to a GitHub Release. The Android app uses GitHub's stable `releases/latest/download` URLs.
+4. The workflow publishes `cameras.db.gz` and `version.json` to a GitHub Release. It stops when Overpass returns no alert points, preserving the last known-good release. The Android app uses GitHub's stable `releases/latest/download` URLs.
 
 Run the pipeline locally with:
 

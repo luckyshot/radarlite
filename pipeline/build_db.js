@@ -10,6 +10,10 @@ const DB_GZ_FILE   = '/tmp/cameras.db.gz';
 const VERSION_FILE = '/tmp/version.json';
 
 const cameras = JSON.parse(readFileSync('/tmp/merged_cameras.json', 'utf8'));
+// Never replace the public release with a valid-looking, empty database when
+// an upstream source is unavailable. This also protects future source changes.
+if (cameras.length === 0)
+  throw new Error('No alert points to publish; preserving the last known-good database release');
 const today   = new Date().toISOString().slice(0, 10);
 
 // GitHub Releases gives us a stable "latest" download URL.
