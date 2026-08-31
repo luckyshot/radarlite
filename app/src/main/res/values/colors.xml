@@ -7,6 +7,12 @@
     <color name="text_secondary">#888888</color>
     <color name="text_muted">#B8B8B8</color>
     <color name="accent">#F5A623</color>
+    <color name="drive_card">#233447</color>
+    <color name="drive_tile">#172838</color>
+    <color name="drive_label">#B8D6EF</color>
+    <color name="drive_copy">#D2E4F2</color>
+    <color name="drive_divider">#496177</color>
+    <color name="border_subtle">#343434</color>
     <color name="status_active">#4CAF50</color>
     <color name="status_idle_bg">#2D2D2D</color>
     <color name="status_stopped_bg">#3A2424</color>

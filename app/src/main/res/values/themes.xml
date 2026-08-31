@@ -1,93 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.RadarLite" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/accent</item>
-        <item name="colorPrimaryVariant">@color/bg_card</item>
-        <item name="colorOnPrimary">@color/bg_primary</item>
-        <item name="android:windowBackground">@color/bg_primary</item>
-        <item name="android:statusBarColor">@color/bg_primary</item>
-        <item name="android:navigationBarColor">@color/bg_primary</item>
-    </style>
-    <style name="SectionLabel">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginBottom">12dp</item>
-        <item name="android:textColor">@color/text_secondary</item>
-        <item name="android:textSize">12sp</item>
-        <item name="android:letterSpacing">0.12</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
-    </style>
-    <style name="ScreenCard">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginBottom">12dp</item>
-        <item name="android:background">@drawable/card_bg</item>
-        <item name="android:orientation">vertical</item>
-        <item name="android:padding">16dp</item>
-    </style>
-    <style name="MetricTile">
-        <item name="android:layout_width">0dp</item>
-        <item name="android:layout_height">92dp</item>
-        <item name="android:layout_weight">1</item>
-        <item name="android:background">@drawable/tile_bg</item>
-        <item name="android:orientation">vertical</item>
-        <item name="android:gravity">bottom</item>
-        <item name="android:padding">12dp</item>
-    </style>
-    <style name="MetricLabel">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:textColor">@color/text_secondary</item>
-        <item name="android:textSize">12sp</item>
-    </style>
-    <style name="MetricValue">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginTop">6dp</item>
-        <item name="android:textColor">@color/text_primary</item>
-        <item name="android:textSize">22sp</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:maxLines">1</item>
-        <item name="android:ellipsize">end</item>
-    </style>
-    <style name="StatusRow">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:gravity">center_vertical</item>
-        <item name="android:paddingVertical">6dp</item>
-    </style>
-    <style name="RowLabel">
-        <item name="android:layout_width">0dp</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_weight">1</item>
-        <item name="android:textColor">@color/text_secondary</item>
-        <item name="android:textSize">14sp</item>
-    </style>
-    <style name="RowValue">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:textColor">@color/text_primary</item>
-        <item name="android:textSize">14sp</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
-    </style>
-    <style name="SoundTestButton" parent="Widget.MaterialComponents.Button">
-        <item name="android:layout_width">0dp</item>
-        <item name="android:layout_height">48dp</item>
-        <item name="android:layout_weight">1</item>
-        <item name="backgroundTint">@color/accent</item>
-        <item name="android:textColor">@color/bg_primary</item>
-        <item name="cornerRadius">8dp</item>
-    </style>
-    <style name="GuideText">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginBottom">8dp</item>
-        <item name="android:textColor">@color/text_muted</item>
-        <item name="android:textSize">14sp</item>
-        <item name="android:lineSpacingExtra">2dp</item>
-    </style>
-    <style name="LinkText" parent="GuideText">
-        <item name="android:textColor">@color/accent</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
-    </style>
+    <style name="Theme.RadarLite" parent="Theme.MaterialComponents.DayNight.NoActionBar"><item name="colorPrimary">@color/accent</item><item name="colorPrimaryVariant">@color/bg_card</item><item name="colorOnPrimary">@color/bg_primary</item><item name="android:windowBackground">@color/bg_primary</item><item name="android:statusBarColor">@color/bg_primary</item><item name="android:navigationBarColor">@color/bg_primary</item></style>
+    <style name="DriveCard"><item name="android:layout_width">match_parent</item><item name="android:layout_height">wrap_content</item><item name="android:layout_marginBottom">10dp</item><item name="android:background">@drawable/drive_card_bg</item><item name="android:orientation">vertical</item><item name="android:padding">20dp</item></style>
+    <style name="DriveMetric"><item name="android:layout_width">0dp</item><item name="android:layout_height">88dp</item><item name="android:layout_weight">1</item><item name="android:background">@drawable/drive_tile_bg</item><item name="android:orientation">vertical</item><item name="android:gravity">center_vertical</item><item name="android:paddingHorizontal">14dp</item></style>
+    <style name="DriveMetricLabel"><item name="android:layout_width">match_parent</item><item name="android:layout_height">wrap_content</item><item name="android:textColor">@color/drive_label</item><item name="android:textSize">11sp</item><item name="android:letterSpacing">0.1</item></style>
+    <style name="DriveMetricValue"><item name="android:layout_width">match_parent</item><item name="android:layout_height">wrap_content</item><item name="android:layout_marginTop">5dp</item><item name="android:textColor">@color/text_primary</item><item name="android:textSize">27sp</item><item name="android:fontFamily">sans-serif-medium</item><item name="android:maxLines">1</item><item name="android:ellipsize">end</item></style>
+    <style name="GlanceCard"><item name="android:layout_width">match_parent</item><item name="android:layout_height">88dp</item><item name="android:layout_marginBottom">28dp</item><item name="android:background">@drawable/card_bg</item><item name="android:gravity">center</item><item name="android:orientation">horizontal</item></style>
+    <style name="GlanceItem"><item name="android:layout_width">0dp</item><item name="android:layout_height">wrap_content</item><item name="android:layout_weight">1</item><item name="android:gravity">center</item><item name="android:orientation">vertical</item></style>
+    <style name="GlanceDivider"><item name="android:layout_width">1dp</item><item name="android:layout_height">44dp</item><item name="android:background">@color/border_subtle</item></style>
+    <style name="GlanceLabel"><item name="android:layout_width">wrap_content</item><item name="android:layout_height">wrap_content</item><item name="android:textColor">@color/text_secondary</item><item name="android:textSize">10sp</item><item name="android:letterSpacing">0.1</item></style>
+    <style name="GlanceValue"><item name="android:layout_width">match_parent</item><item name="android:layout_height">wrap_content</item><item name="android:gravity">center</item><item name="android:textColor">@color/text_primary</item><item name="android:textSize">20sp</item><item name="android:fontFamily">sans-serif-medium</item><item name="android:maxLines">1</item><item name="android:ellipsize">end</item></style>
+    <style name="GlanceHint"><item name="android:layout_width">wrap_content</item><item name="android:layout_height">wrap_content</item><item name="android:textColor">@color/text_secondary</item><item name="android:textSize">11sp</item></style>
+    <style name="ParkedLabel"><item name="android:layout_width">match_parent</item><item name="android:layout_height">wrap_content</item><item name="android:layout_marginBottom">10dp</item><item name="android:textColor">@color/accent</item><item name="android:textSize">12sp</item><item name="android:letterSpacing">0.12</item><item name="android:fontFamily">sans-serif-medium</item></style>
+    <style name="SectionLabel"><item name="android:layout_width">match_parent</item><item name="android:layout_height">wrap_content</item><item name="android:layout_marginBottom">6dp</item><item name="android:textColor">@color/text_secondary</item><item name="android:textSize">12sp</item><item name="android:letterSpacing">0.12</item><item name="android:fontFamily">sans-serif-medium</item></style>
+    <style name="SectionHint"><item name="android:layout_width">match_parent</item><item name="android:layout_height">wrap_content</item><item name="android:layout_marginBottom">8dp</item><item name="android:textColor">@color/text_muted</item><item name="android:textSize">13sp</item></style>
+    <style name="ScreenCard"><item name="android:layout_width">match_parent</item><item name="android:layout_height">wrap_content</item><item name="android:layout_marginBottom">12dp</item><item name="android:background">@drawable/card_bg</item><item name="android:orientation">vertical</item><item name="android:padding">16dp</item></style>
+    <style name="StatusRow"><item name="android:layout_width">match_parent</item><item name="android:layout_height">52dp</item><item name="android:gravity">center_vertical</item></style>
+    <style name="RowLabel"><item name="android:layout_width">0dp</item><item name="android:layout_height">wrap_content</item><item name="android:layout_weight">1</item><item name="android:textColor">@color/text_primary</item><item name="android:textSize">16sp</item></style>
+    <style name="RowValue"><item name="android:layout_width">wrap_content</item><item name="android:layout_height">wrap_content</item><item name="android:textColor">@color/text_primary</item><item name="android:textSize">14sp</item><item name="android:fontFamily">sans-serif-medium</item></style>
+    <style name="SettingSwitch"><item name="android:layout_width">56dp</item><item name="android:layout_height">48dp</item></style>
+    <style name="PrimaryButton" parent="Widget.MaterialComponents.Button"><item name="android:layout_width">match_parent</item><item name="android:layout_height">52dp</item><item name="backgroundTint">@color/accent</item><item name="android:textColor">@color/bg_primary</item><item name="cornerRadius">12dp</item></style>
+    <style name="SoundTestButton" parent="Widget.MaterialComponents.Button"><item name="android:layout_width">0dp</item><item name="android:layout_height">48dp</item><item name="android:layout_weight">1</item><item name="backgroundTint">@color/bg_tile</item><item name="android:textColor">@color/text_primary</item><item name="cornerRadius">10dp</item></style>
+    <style name="EmptyState"><item name="android:layout_width">match_parent</item><item name="android:layout_height">wrap_content</item><item name="android:paddingVertical">18dp</item><item name="android:textAlignment">center</item><item name="android:textColor">@color/text_secondary</item><item name="android:textSize">14sp</item></style>
+    <style name="GuideText"><item name="android:layout_width">match_parent</item><item name="android:layout_height">wrap_content</item><item name="android:layout_marginBottom">8dp</item><item name="android:textColor">@color/text_muted</item><item name="android:textSize">14sp</item><item name="android:lineSpacingExtra">2dp</item></style>
+    <style name="LinkText" parent="GuideText"><item name="android:textColor">@color/accent</item><item name="android:fontFamily">sans-serif-medium</item></style>
 </resources>

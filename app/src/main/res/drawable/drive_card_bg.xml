@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cool, high-contrast surface distinguishes driving controls from parked settings. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle"><solid android:color="@color/drive_card" /><corners android:radius="20dp" /></shape>

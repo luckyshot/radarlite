@@ -4,12 +4,14 @@ Lightweight Android road-alert app. All features are free, with no ads, subscrip
 
 RadarLite is free and open source. Store listing assets and Play review notes live in `store-assets/`. The public GitHub Pages site lives in `docs/` and uses plain-language copy for non-technical users.
 
+The Android home screen is a drive-first dashboard: a large monitoring switch and live speed/alert information appear before configuration. Alert choices, database updates, sound tests, and diagnostics are clearly grouped below “Set up when parked”, keeping the on-road interaction quick and distraction-aware.
+
 ## Quick info
 
 ```sh
 ./gradlew :app:assembleDebug -Pradarlite.dbVersionUrl=https://github.com/OWNER/REPO/releases/latest/download/version.json
-cp app/build/outputs/apk/debug/app-debug.apk ~/Transfer/radarlite.apk
 adb install -r app/build/outputs/apk/debug/app-debug.apk
+cp app/build/outputs/apk/debug/app-debug.apk ~/Transfer/radarlite.apk
 ```
 
 ## Status
