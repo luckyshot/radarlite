@@ -67,7 +67,7 @@ npm ci
 npm run all
 ```
 
-The pipeline runs on Node 24 in GitHub Actions. Keep native pipeline dependencies, especially `better-sqlite3`, on versions that support Node 24 so `npm ci` can use compatible prebuilt binaries.
+The pipeline runs on Node 24 in GitHub Actions and uses the Node 24-compatible v7 checkout and setup actions. Keep native pipeline dependencies, especially `better-sqlite3`, on versions that support Node 24 so `npm ci` can use compatible prebuilt binaries.
 
 ## Data sources
 
