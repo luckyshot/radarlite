@@ -105,6 +105,8 @@ class MainScreenActions(
     val onPrivacyClick: () -> Unit,
     val onSourceClick: () -> Unit,
     val onOsmClick: () -> Unit,
+    val onActivateGps: (Int) -> Unit,
+    val onDeactivateGps: () -> Unit,
 )
 
 @Composable
@@ -128,6 +130,13 @@ fun MainScreen(state: MainUiState, actions: MainScreenActions) {
         ) {
             item { TopBar() }
             item { DriveHeroCard(state, actions.onToggleService) }
+            item {
+                ActiveGpsSection(
+                    remainingMs = state.activeGpsRemainingMs,
+                    onActivate = actions.onActivateGps,
+                    onDeactivate = actions.onDeactivateGps,
+                )
+            }
             item { GlanceRow(state) }
             item { SectionBanner("SET UP WHEN PARKED") }
             item {
@@ -370,6 +379,57 @@ private fun DriveMetricTile(
             maxLines = 1,
             modifier = Modifier.padding(top = 6.dp),
         )
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Self-powered GPS — lets RadarLite work without another app driving GPS
+// ---------------------------------------------------------------------------------------------
+
+private data class ActiveGpsOption(val minutes: Int, val label: String)
+
+private val ACTIVE_GPS_OPTIONS = listOf(
+    ActiveGpsOption(30, "Activate 30 min"),
+    ActiveGpsOption(60, "Activate 1h"),
+    ActiveGpsOption(120, "Activate 2h"),
+)
+
+@Composable
+private fun ActiveGpsSection(remainingMs: Long?, onActivate: (Int) -> Unit, onDeactivate: () -> Unit) {
+    if (remainingMs != null) {
+        val minutesLeft = ((remainingMs + 59_999L) / 60_000L).toInt().coerceAtLeast(0)
+        Button(
+            onClick = onDeactivate,
+            colors = ButtonDefaults.buttonColors(containerColor = Coral, contentColor = Color(0xFF1A1520)),
+            shape = MaterialTheme.shapes.large,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+        ) {
+            Text(
+                "Active GPS ($minutesLeft min left). Click to stop.",
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+            )
+        }
+    } else {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            ACTIVE_GPS_OPTIONS.forEach { option ->
+                Button(
+                    onClick = { onActivate(option.minutes) },
+                    colors = ButtonDefaults.buttonColors(containerColor = SurfaceRaised, contentColor = TextPrimary),
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
+                ) {
+                    Text(option.label, fontSize = 12.sp, textAlign = TextAlign.Center)
+                }
+            }
+        }
     }
 }
 
@@ -765,7 +825,7 @@ private fun SoundTestCard(onTestSound: (String, Int?, Boolean) -> Unit, onTestUr
 private fun GuideCard(onPrivacyClick: () -> Unit, onSourceClick: () -> Unit, onOsmClick: () -> Unit) {
     ScreenCard(title = "QUICK GUIDE") {
         Text(
-            "RadarLite only activates when your GPS is actively being used by a navigation app, making the app very battery efficient but requires you to have Waze, Google Maps or another GPS-activating app in order to receive alerts.",
+            "RadarLite normally activates only when your GPS is already being used by a navigation app like Waze or Google Maps, which keeps it very battery efficient. If you're not running one, use Activate above to have RadarLite request GPS on its own for a set time.",
             style = MaterialTheme.typography.bodyMedium,
             color = TextMuted,
         )

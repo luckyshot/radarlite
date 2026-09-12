@@ -12,6 +12,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -19,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.delay
 import com.radarlite.alert.AlertStage
 import com.radarlite.alert.SoundManager
 import com.radarlite.db.AlertLogEntry
@@ -52,6 +54,7 @@ class MainActivity : ComponentActivity() {
     private var selectedSpeeds by mutableStateOf<Set<Int>>(emptySet())
     private var updatingDb by mutableStateOf(false)
     private var pendingDialog by mutableStateOf(PendingDialog.NONE)
+    private var pendingGrantedAction: () -> Unit = ::startService
 
     // Permission launchers (must be declared before onCreate)
     private val requestFineLocation = registerForActivityResult(
@@ -89,7 +92,7 @@ class MainActivity : ComponentActivity() {
     private val requestNotifications = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {
-        startService()
+        pendingGrantedAction()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -117,6 +120,16 @@ class MainActivity : ComponentActivity() {
                 val dbVersion by ServiceState.dbVersion.collectAsState()
                 val dbCameraCount by ServiceState.dbCameraCount.collectAsState()
                 val lastDbCheckMs by ServiceState.lastDbCheckMs.collectAsState()
+                val activeGpsDeadlineMs by ServiceState.activeGpsDeadlineMs.collectAsState()
+
+                var nowMs by mutableStateOf(System.currentTimeMillis())
+                LaunchedEffect(activeGpsDeadlineMs) {
+                    while (activeGpsDeadlineMs != null) {
+                        nowMs = System.currentTimeMillis()
+                        delay(1_000)
+                    }
+                }
+                val activeGpsRemainingMs = activeGpsDeadlineMs?.let { (it - nowMs).coerceAtLeast(0) }
 
                 val state = MainUiState(
                     serviceEnabled = serviceEnabled,
@@ -141,6 +154,7 @@ class MainActivity : ComponentActivity() {
                     overspeedEnabled = overspeedEnabled,
                     selectedSpeeds = selectedSpeeds,
                     recentAlerts = recentAlerts,
+                    activeGpsRemainingMs = activeGpsRemainingMs,
                 )
 
                 MainScreen(
@@ -162,6 +176,8 @@ class MainActivity : ComponentActivity() {
                         onPrivacyClick = { openExternal(getString(R.string.url_privacy), R.string.no_browser) },
                         onSourceClick = { openExternal(getString(R.string.url_source), R.string.no_browser) },
                         onOsmClick = { openExternal(getString(R.string.url_osm), R.string.no_browser) },
+                        onActivateGps = ::onActivateGps,
+                        onDeactivateGps = ::onDeactivateGps,
                     ),
                 )
 
@@ -317,7 +333,8 @@ class MainActivity : ComponentActivity() {
 
     // ---- Service control ----
 
-    private fun checkPermissionsAndStart() {
+    private fun checkPermissionsAndStart(onGranted: () -> Unit = ::startService) {
+        pendingGrantedAction = onGranted
         when {
             !hasFineLocation() -> requestFineLocation.launch(arrayOf(
                 Manifest.permission.ACCESS_FINE_LOCATION,
@@ -325,7 +342,7 @@ class MainActivity : ComponentActivity() {
             ))
             !hasBgLocation() -> requestBackgroundLocation()
             !hasPostNotifications() -> requestPostNotifications()
-            else -> startService()
+            else -> onGranted()
         }
     }
 
@@ -349,7 +366,7 @@ class MainActivity : ComponentActivity() {
             .putExtra(":settings:fragment_args_key", "permissions_location")
 
     private fun requestPostNotifications() {
-        if (hasPostNotifications()) { startService(); return }
+        if (hasPostNotifications()) { pendingGrantedAction(); return }
         requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
@@ -359,6 +376,18 @@ class MainActivity : ComponentActivity() {
 
     private fun stopService() {
         CameraDetectionService.start(this, CameraDetectionService.ACTION_STOP)
+    }
+
+    private fun onActivateGps(minutes: Int) {
+        checkPermissionsAndStart {
+            serviceEnabled = true
+            prefs.edit().putBoolean("service_enabled", true).apply()
+            CameraDetectionService.activateGps(this, minutes * 60_000L)
+        }
+    }
+
+    private fun onDeactivateGps() {
+        CameraDetectionService.deactivateGps(this)
     }
 
     // ---- Permission checks ----

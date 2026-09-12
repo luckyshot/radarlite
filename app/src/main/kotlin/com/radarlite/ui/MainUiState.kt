@@ -25,6 +25,7 @@ data class MainUiState(
     val overspeedEnabled: Boolean = true,
     val selectedSpeeds: Set<Int> = emptySet(),
     val recentAlerts: List<AlertLogEntry> = emptyList(),
+    val activeGpsRemainingMs: Long? = null,
 )
 
 data class AlertTypeInfo(

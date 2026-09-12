@@ -28,6 +28,9 @@ class CameraDetectionService : Service() {
         const val ACTION_START         = "com.radarlite.START"
         const val ACTION_STOP          = "com.radarlite.STOP"
         const val ACTION_RELOAD_DB     = "com.radarlite.RELOAD_DB"
+        const val ACTION_ACTIVATE_GPS   = "com.radarlite.ACTIVATE_GPS"
+        const val ACTION_DEACTIVATE_GPS = "com.radarlite.DEACTIVATE_GPS"
+        const val EXTRA_DURATION_MS    = "duration_ms"
         const val NOTIFICATION_ID      = 1
         const val CHANNEL_ID           = "radarlite_service"
         private const val MAX_PASSIVE_FIX_AGE_MS = 30_000L
@@ -46,6 +49,19 @@ class CameraDetectionService : Service() {
                 context.startService(intent)
             }
         }
+
+        fun activateGps(context: Context, durationMs: Long) {
+            val intent = Intent(context, CameraDetectionService::class.java).apply {
+                action = ACTION_ACTIVATE_GPS
+                putExtra(EXTRA_DURATION_MS, durationMs)
+            }
+            // May need to start the foreground service if monitoring wasn't already on.
+            context.startForegroundService(intent)
+        }
+
+        fun deactivateGps(context: Context) {
+            start(context, ACTION_DEACTIVATE_GPS)
+        }
     }
 
     private lateinit var locationStrategy: LocationStrategy
@@ -60,6 +76,8 @@ class CameraDetectionService : Service() {
     private var listenerRefreshJob: Job? = null
     private var notificationStatus: String? = null
     private var monitoring = false
+    private var activeGpsEnabled = false
+    private var activeGpsJob: Job? = null
     private val speedAnnouncements = SpeedAnnouncementTracker()
     private var lastProcessedFixMs = 0L
 
@@ -81,6 +99,8 @@ class CameraDetectionService : Service() {
             ACTION_START, null -> startMonitoring()
             ACTION_STOP        -> { stopMonitoring(); stopSelf(); return START_NOT_STICKY }
             ACTION_RELOAD_DB   -> reloadDatabase()
+            ACTION_ACTIVATE_GPS   -> activateActiveGps(intent.getLongExtra(EXTRA_DURATION_MS, 0L))
+            ACTION_DEACTIVATE_GPS -> deactivateActiveGps()
         }
         return START_STICKY
     }
@@ -122,6 +142,8 @@ class CameraDetectionService : Service() {
     private fun stopMonitoring() {
         if (!monitoring && notificationStatus == null) return
         monitoring = false
+        activeGpsEnabled = false
+        activeGpsJob?.cancel()
         locationStrategy.stop()
         locationIdleJob?.cancel()
         listenerRefreshJob?.cancel()
@@ -139,7 +161,34 @@ class CameraDetectionService : Service() {
         ServiceState.camerasNearby.value = 0
         ServiceState.closestCameraDistanceM.value = null
         ServiceState.gpsMode.value    = "—"
+        ServiceState.activeGpsDeadlineMs.value = null
         notificationStatus = null
+    }
+
+    private fun activateActiveGps(durationMs: Long) {
+        if (durationMs <= 0) return
+        if (!monitoring) startMonitoring()
+        activeGpsEnabled = true
+        locationStrategy.startActive()
+        ServiceState.gpsMode.value = getString(R.string.gps_active)
+        val deadline = System.currentTimeMillis() + durationMs
+        ServiceState.activeGpsDeadlineMs.value = deadline
+        activeGpsJob?.cancel()
+        activeGpsJob = scope.launch {
+            delay(durationMs)
+            deactivateActiveGps()
+        }
+    }
+
+    private fun deactivateActiveGps() {
+        if (!activeGpsEnabled) return
+        activeGpsEnabled = false
+        activeGpsJob?.cancel()
+        ServiceState.activeGpsDeadlineMs.value = null
+        if (monitoring) {
+            locationStrategy.start()
+            ServiceState.gpsMode.value = getString(R.string.gps_passive)
+        }
     }
 
     private fun onLocationUpdate(state: LocationState) {
@@ -172,7 +221,8 @@ class CameraDetectionService : Service() {
                 ServiceState.closestCameraDistanceM.value = alerts.minOfOrNull {
                     GeoUtils.haversine(state.lat, state.lon, it.lat, it.lon)
                 }
-                ServiceState.gpsMode.value = getString(R.string.gps_passive)
+                ServiceState.gpsMode.value =
+                    getString(if (activeGpsEnabled) R.string.gps_active else R.string.gps_passive)
             }
         }
     }
@@ -213,10 +263,12 @@ class CameraDetectionService : Service() {
 
     private fun startListenerRefresh() {
         listenerRefreshJob?.cancel()
-        // Passive only: re-registering recovers a stale Fused callback without starting GPS.
+        // Re-registering periodically recovers a stale Fused callback; skipped while
+        // self-powered GPS is active since that request is already live and frequent.
         listenerRefreshJob = scope.launch {
             while (isActive) {
                 delay(PASSIVE_LISTENER_REFRESH_MS)
+                if (activeGpsEnabled) continue
                 locationStrategy.stop()
                 locationStrategy.start()
             }

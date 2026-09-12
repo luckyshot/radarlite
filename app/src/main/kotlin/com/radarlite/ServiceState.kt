@@ -16,6 +16,7 @@ object ServiceState {
     val camerasNearby          = MutableStateFlow(0)
     val closestCameraDistanceM = MutableStateFlow<Float?>(null)
     val gpsMode                = MutableStateFlow("—")
+    val activeGpsDeadlineMs    = MutableStateFlow<Long?>(null)
     val dbVersion              = MutableStateFlow("—")
     val dbCameraCount          = MutableStateFlow(0)
     val lastDbCheckMs          = MutableStateFlow(0L)

@@ -13,9 +13,15 @@ class LocationStrategy(
 ) {
     private companion object {
         const val TAG = "LocationStrategy"
+        // Self-powered GPS interval: frequent enough to catch a 600 m-range camera alert with
+        // margin at motorway speed (~55 m/s * 3s ~= 165 m per fix), infrequent enough to keep
+        // battery drain well below a full-time navigation app.
+        const val ACTIVE_INTERVAL_MS = 3_000L
+        const val ACTIVE_MIN_INTERVAL_MS = 2_000L
     }
 
     private val fusedClient = LocationServices.getFusedLocationProviderClient(context)
+    private var active = false
 
     private val callback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
@@ -29,29 +35,48 @@ class LocationStrategy(
         }
     }
 
-    @SuppressLint("MissingPermission")
     fun start() {
-        try {
-            fusedClient.requestLocationUpdates(buildRequest(), callback, Looper.getMainLooper())
-                // If navigation was already active, use the externally produced fix immediately.
-                .addOnSuccessListener { emitCachedLastLocation() }
-                .addOnFailureListener { Log.w(TAG, "Passive location request failed", it) }
-        } catch (e: SecurityException) {
-            Log.w(TAG, "Passive location permission missing", e)
-        }
+        active = false
+        requestUpdates()
+    }
+
+    /** Self-powered mode: RadarLite drives GPS itself instead of waiting on another app. */
+    fun startActive() {
+        active = true
+        requestUpdates()
     }
 
     fun stop() {
         fusedClient.removeLocationUpdates(callback)
     }
 
+    @SuppressLint("MissingPermission")
+    private fun requestUpdates() {
+        fusedClient.removeLocationUpdates(callback)
+        try {
+            fusedClient.requestLocationUpdates(buildRequest(), callback, Looper.getMainLooper())
+                // If navigation was already active, use the externally produced fix immediately.
+                .addOnSuccessListener { emitCachedLastLocation() }
+                .addOnFailureListener { Log.w(TAG, "Location request failed", it) }
+        } catch (e: SecurityException) {
+            Log.w(TAG, "Location permission missing", e)
+        }
+    }
+
     private fun buildRequest(): LocationRequest =
-        LocationRequest.Builder(Priority.PRIORITY_PASSIVE, Long.MAX_VALUE)
-            // Passive keeps GPS owned by other apps. Avoid a distance gate: the first background
-            // fix can reuse the same coordinates and still proves another app is driving GPS.
-            .setMinUpdateIntervalMillis(1_000)
-            .setMaxUpdateDelayMillis(0)
-            .build()
+        if (active) {
+            LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, ACTIVE_INTERVAL_MS)
+                .setMinUpdateIntervalMillis(ACTIVE_MIN_INTERVAL_MS)
+                .build()
+        } else {
+            LocationRequest.Builder(Priority.PRIORITY_PASSIVE, Long.MAX_VALUE)
+                // Passive keeps GPS owned by other apps. Avoid a distance gate: the first
+                // background fix can reuse the same coordinates and still proves another app is
+                // driving GPS.
+                .setMinUpdateIntervalMillis(1_000)
+                .setMaxUpdateDelayMillis(0)
+                .build()
+        }
 
     @SuppressLint("MissingPermission")
     private fun emitCachedLastLocation() {

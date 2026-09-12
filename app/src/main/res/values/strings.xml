@@ -6,6 +6,7 @@
     <string name="status_stopped">Stopped</string>
     <string name="notification_status_idle">Idle</string>
     <string name="gps_passive">Passive (external GPS only)</string>
+    <string name="gps_active">Active (self-powered GPS)</string>
     <string name="btn_check_update">Check for update</string>
     <string name="speed_announcement_speed">%1$d km/h</string>
     <string name="no_alerts">No alerts yet</string>
