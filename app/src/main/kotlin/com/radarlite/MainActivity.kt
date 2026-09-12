@@ -9,6 +9,8 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.View
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -87,6 +89,7 @@ class MainActivity : AppCompatActivity() {
 
         setupRecyclerView()
         setupSwitch()
+        setupCountrySelectors()
         setupSpeedAnnouncements()
         setupAlertToggles()
         setupUpdateButton()
@@ -120,6 +123,54 @@ class MainActivity : AppCompatActivity() {
         }
         // App updates and debug reinstalls can stop the service while preserving this preference.
         if (enabled) checkPermissionsAndStart()
+    }
+
+    // Country 1 is always active; country 2 adds a "None" option to disable a second country.
+    // Switching either one takes effect immediately for monitoring, but an on-device database
+    // for a deselected country is only deleted the next time an update check runs.
+    private fun setupCountrySelectors() {
+        val names = Countries.ALL.map { it.first }
+        binding.spinnerCountry1.adapter = countrySpinnerAdapter(names)
+        val country2Names = listOf(Countries.NONE_LABEL) + names
+        binding.spinnerCountry2.adapter = countrySpinnerAdapter(country2Names)
+
+        binding.spinnerCountry1.setSelection(names.indexOf(Countries.nameFor(CountrySettings.country1(this))).coerceAtLeast(0))
+        val code2 = CountrySettings.country2(this)
+        binding.spinnerCountry2.setSelection(
+            if (code2.isEmpty()) 0 else country2Names.indexOf(Countries.nameFor(code2)).coerceAtLeast(0)
+        )
+
+        binding.spinnerCountry1.onItemSelectedListener = onCountrySelected { position ->
+            val code = Countries.codeFor(names[position]) ?: return@onCountrySelected
+            if (code != CountrySettings.country1(this)) {
+                CountrySettings.setCountry1(this, code)
+                onActiveCountriesChanged()
+            }
+        }
+        binding.spinnerCountry2.onItemSelectedListener = onCountrySelected { position ->
+            val code = if (position == 0) Countries.NONE_CODE else Countries.codeFor(country2Names[position]) ?: return@onCountrySelected
+            if (code != CountrySettings.country2(this)) {
+                CountrySettings.setCountry2(this, code)
+                onActiveCountriesChanged()
+            }
+        }
+    }
+
+    private fun countrySpinnerAdapter(items: List<String>) =
+        ArrayAdapter(this, android.R.layout.simple_spinner_item, items).apply {
+            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        }
+
+    private fun onCountrySelected(onSelected: (Int) -> Unit) = object : AdapterView.OnItemSelectedListener {
+        override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) = onSelected(position)
+        override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+    }
+
+    private fun onActiveCountriesChanged() {
+        refreshDatabaseState()
+        if (ServiceState.isRunning.value) {
+            CameraDetectionService.start(applicationContext, CameraDetectionService.ACTION_RELOAD_DB)
+        }
     }
 
     private fun setupUpdateButton() {
@@ -212,7 +263,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun promptForInitialDatabaseIfMissing() {
-        val missingDatabase = CameraDbHelper(applicationContext).also { it.open() }.let { dbHelper ->
+        val codes = CountrySettings.selectedCodes(this)
+        val missingDatabase = CameraDbHelper(applicationContext).also { it.open(codes) }.let { dbHelper ->
             try {
                 dbHelper.getCameraCount() == 0
             } finally {
@@ -250,9 +302,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun refreshDatabaseState() {
-        val dbHelper = CameraDbHelper(applicationContext).also { it.open() }
+        val codes = CountrySettings.selectedCodes(this)
+        val dbHelper = CameraDbHelper(applicationContext).also { it.open(codes) }
         try {
-            ServiceState.dbVersion.value = dbHelper.getVersion() ?: getString(R.string.no_database)
+            ServiceState.dbVersion.value = dbHelper.versionSummary(codes)
             ServiceState.dbCameraCount.value = dbHelper.getCameraCount()
             ServiceState.lastDbCheckMs.value = DatabaseUpdater.lastCheckMs(this)
         } finally {

@@ -10,6 +10,7 @@ import com.radarlite.MainActivity
 import com.radarlite.R
 import com.radarlite.ServiceState
 import com.radarlite.AlertSettings
+import com.radarlite.CountrySettings
 import com.radarlite.SpeedAnnouncements
 import com.radarlite.SpeedAnnouncementTracker
 import com.radarlite.alert.*
@@ -64,13 +65,14 @@ class CameraDetectionService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        cameraDb     = CameraDbHelper(this).apply { open() }
+        val codes    = CountrySettings.selectedCodes(this)
+        cameraDb     = CameraDbHelper(this).apply { open(codes) }
         appDb        = AppDatabase.get(this)
         soundManager = SoundManager(this)
         alertEngine = AlertEngine(soundManager) { cam, speedKmh -> logAlert(cam, speedKmh) }
         locationStrategy = LocationStrategy(this) { state -> onLocationUpdate(state) }
 
-        ServiceState.dbVersion.value     = cameraDb.getVersion() ?: "No database"
+        ServiceState.dbVersion.value     = cameraDb.versionSummary(codes)
         ServiceState.dbCameraCount.value = cameraDb.getCameraCount()
     }
 
@@ -178,9 +180,10 @@ class CameraDetectionService : Service() {
     private fun reloadDatabase() {
         scope.launch {
             locationMutex.withLock {
-                cameraDb.reopen()
+                val codes = CountrySettings.selectedCodes(this@CameraDetectionService)
+                cameraDb.reopen(codes)
                 alertEngine.reset()
-                ServiceState.dbVersion.value = cameraDb.getVersion() ?: "No database"
+                ServiceState.dbVersion.value = cameraDb.versionSummary(codes)
                 ServiceState.dbCameraCount.value = cameraDb.getCameraCount()
             }
         }

@@ -2,8 +2,26 @@ name: Update Alert Database
 
 on:
   schedule:
-    - cron: '0 3 * * 0'   # every Sunday 03:00 UTC
+    - cron: '0 3 * * *'   # daily 03:00 UTC — rebuilds whichever two countries are most overdue
   workflow_dispatch:        # allow manual trigger via GitHub UI > Actions tab
+    inputs:
+      country:
+        description: 'Country to rebuild right now (ignored by the daily schedule)'
+        type: choice
+        default: Spain
+        # Keep in sync with pipeline/countries.js.
+        options:
+          - Spain
+          - Portugal
+          - France
+          - Germany
+          - Italy
+          - Andorra
+          - United Kingdom
+          - United States
+          - Canada
+          - Australia
+          - New Zealand
 
 permissions:
   contents: write           # needed to create GitHub Releases
@@ -25,29 +43,49 @@ jobs:
       - name: Install pipeline dependencies
         run: cd pipeline && npm ci
 
-      - name: Fetch OSM data
-        run: node pipeline/fetch_osm.js
+      # All countries share one persistent release (see the publish step below), so we
+      # need last run's manifest both to know which countries are most overdue and to
+      # avoid losing the entries for countries this run does not touch.
+      - name: Fetch existing versions.json
+        run: |
+          curl -fsSL "https://github.com/${{ github.repository }}/releases/latest/download/versions.json" \
+            -o /tmp/existing_versions.json || echo '{}' > /tmp/existing_versions.json
 
-      - name: Merge and deduplicate
-        run: node pipeline/merge.js
+      - name: Determine countries to build
+        id: countries
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            LIST='["${{ github.event.inputs.country }}"]'
+          else
+            LIST=$(node pipeline/pick_countries.js /tmp/existing_versions.json)
+          fi
+          echo "Building: $LIST"
+          echo "list=$LIST" >> $GITHUB_OUTPUT
 
-      - name: Build SQLite + gzip
+      - name: Fetch, merge, and build each country
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
-        run: node pipeline/build_db.js
+        run: |
+          for name in $(echo '${{ steps.countries.outputs.list }}' | jq -r '.[]'); do
+            echo "=== $name ==="
+            COUNTRY="$name" node pipeline/fetch_osm.js && \
+            node pipeline/merge.js && \
+            COUNTRY="$name" node pipeline/build_db.js \
+              || { echo "::warning::Skipping $name (fetch or build failed); keeping its last release"; continue; }
+          done
 
-      - name: Get today's date
-        id: date
-        run: echo "date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
+      - name: Merge versions manifest
+        run: node pipeline/build_manifest.js /tmp/existing_versions.json
 
-      # Creates/updates a GitHub Release and attaches cameras.db.gz + version.json.
-      # The Android app downloads from the stable "latest" URL — no R2 account needed.
+      # Every country's cameras.db.gz lives on ONE persistent release so the app's stable
+      # "latest" download URLs keep working for countries this run did not rebuild.
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: db-${{ steps.date.outputs.date }}
-          name: Alert DB ${{ steps.date.outputs.date }}
-          body: "Automated weekly update from OpenStreetMap"
+          tag_name: db-latest
+          name: Alert Database
+          make_latest: true
+          body: "Automated update from OpenStreetMap. This run rebuilt: ${{ steps.countries.outputs.list }}"
           files: |
-            /tmp/cameras.db.gz
-            /tmp/version.json
+            /tmp/release/cameras-*.db.gz
+            /tmp/release/versions.json

@@ -1,25 +1,34 @@
 #!/usr/bin/env node
-// Build cameras.db SQLite file, gzip it, and write version.json.
+// Build one country's cameras.db SQLite file, gzip it, and write its version-<CODE>.json.
+// Runs once per country; the workflow loops it over whichever countries need a rebuild.
 import Database from 'better-sqlite3';
-import { readFileSync, writeFileSync, statSync, createReadStream, createWriteStream, existsSync, unlinkSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, statSync, createReadStream, createWriteStream, existsSync, unlinkSync } from 'fs';
 import { createGzip } from 'zlib';
 import { pipeline } from 'stream/promises';
+import { COUNTRY_CODES } from './countries.js';
 
-const DB_FILE      = '/tmp/cameras.db';
-const DB_GZ_FILE   = '/tmp/cameras.db.gz';
-const VERSION_FILE = '/tmp/version.json';
+const RELEASE_DIR = '/tmp/release';
+mkdirSync(RELEASE_DIR, { recursive: true });
+
+const country = process.env.COUNTRY || 'Spain';
+const code = COUNTRY_CODES[country];
+if (!code) throw new Error(`Unknown country: ${country}`);
+
+const DB_FILE      = `/tmp/cameras.db`;
+const DB_GZ_FILE   = `${RELEASE_DIR}/cameras-${code}.db.gz`;
+const VERSION_FILE = `${RELEASE_DIR}/version-${code}.json`;
 
 const cameras = JSON.parse(readFileSync('/tmp/merged_cameras.json', 'utf8'));
-// Never replace the public release with a valid-looking, empty database when
+// Never replace this country's public release with a valid-looking, empty database when
 // an upstream source is unavailable. This also protects future source changes.
 if (cameras.length === 0)
-  throw new Error('No alert points to publish; preserving the last known-good database release');
-const today   = new Date().toISOString().slice(0, 10);
+  throw new Error(`No alert points for ${country}; preserving its last known-good release`);
+const today = new Date().toISOString().slice(0, 10);
 
 // GitHub Releases gives us a stable "latest" download URL.
 // DOWNLOAD_URL can override it for tests or alternate hosting.
 const downloadUrl = process.env.DOWNLOAD_URL
-  ?? `https://github.com/${process.env.GITHUB_REPOSITORY}/releases/latest/download/cameras.db.gz`;
+  ?? `https://github.com/${process.env.GITHUB_REPOSITORY}/releases/latest/download/cameras-${code}.db.gz`;
 
 // --- Build SQLite ---
 if (existsSync(DB_FILE)) unlinkSync(DB_FILE);
@@ -54,7 +63,7 @@ db.prepare("INSERT INTO meta VALUES ('camera_count', ?)").run(String(cameras.len
 db.close();
 
 const dbSize = statSync(DB_FILE).size;
-console.log(`SQLite: ${cameras.length} rows, ${(dbSize / 1024 / 1024).toFixed(1)} MB`);
+console.log(`${country}: ${cameras.length} rows, ${(dbSize / 1024 / 1024).toFixed(1)} MB`);
 
 // --- Gzip ---
 await pipeline(
@@ -65,7 +74,7 @@ await pipeline(
 const gzSize = statSync(DB_GZ_FILE).size;
 console.log(`Gzipped: ${(gzSize / 1024 / 1024).toFixed(1)} MB`);
 
-// --- version.json ---
-const version = { version: today, camera_count: cameras.length, url: downloadUrl, size_bytes: gzSize };
+// --- version-<CODE>.json ---
+const version = { version: today, country, camera_count: cameras.length, url: downloadUrl, size_bytes: gzSize };
 writeFileSync(VERSION_FILE, JSON.stringify(version, null, 2));
-console.log(`version.json: ${JSON.stringify(version)}`);
+console.log(`${VERSION_FILE}: ${JSON.stringify(version)}`);

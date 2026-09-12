@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Fetch explicit, lightweight road-alert points from OpenStreetMap via Overpass API.
 import { writeFileSync } from 'fs';
+import { COUNTRY_CODES } from './countries.js';
 
 // Public mirrors of the Overpass API. overpass-api.de intermittently returns 504s
 // under load, so failed attempts rotate to another mirror instead of hammering the same one.
@@ -11,24 +12,30 @@ const OVERPASS_URLS = [
 ];
 const OUTPUT = '/tmp/osm_cameras.json';
 
-const QUERY = `
+const COUNTRY = process.env.COUNTRY || 'Spain';
+const COUNTRY_CODE = COUNTRY_CODES[COUNTRY];
+if (!COUNTRY_CODE) throw new Error(`Unknown country: ${COUNTRY}`);
+
+function buildQuery(countryCode) {
+  return `
 [out:json][timeout:300];
-// Use Spain's administrative area so the shared Overpass server does not have
+// Use the country's administrative area so the shared Overpass server does not have
 // to assemble every matching alert point in the world.
-area["ISO3166-1"="ES"]["boundary"="administrative"]->.spain;
+area["ISO3166-1"="${countryCode}"]["boundary"="administrative"]->.country;
 (
-  relation(area.spain)["type"="enforcement"]["enforcement"~"maxspeed|average_speed|traffic_signals"];
-  node(area.spain)["highway"="speed_camera"];
-  node(area.spain)["hazard"="curve"];
-  node(area.spain)["hazard"="dangerous_junction"];
-  node(area.spain)["railway"="level_crossing"];
-  node(area.spain)["traffic_calming"];
+  relation(area.country)["type"="enforcement"]["enforcement"~"maxspeed|average_speed|traffic_signals"];
+  node(area.country)["highway"="speed_camera"];
+  node(area.country)["hazard"="curve"];
+  node(area.country)["hazard"="dangerous_junction"];
+  node(area.country)["railway"="level_crossing"];
+  node(area.country)["traffic_calming"];
 );
 out center;
 `;
+}
 
 async function fetchOverpass(query) {
-  console.log('Fetching OSM data (this takes a few minutes)...');
+  console.log(`Fetching OSM data for ${COUNTRY} (this takes a few minutes)...`);
   const attempts = OVERPASS_URLS.length * 2;
   for (let attempt = 0; attempt < attempts; attempt++) {
     const url = OVERPASS_URLS[attempt % OVERPASS_URLS.length];
@@ -82,7 +89,7 @@ function parseDirection(raw) {
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-const elements = await fetchOverpass(QUERY);
+const elements = await fetchOverpass(buildQuery(COUNTRY_CODE));
 
 const seen = new Set();
 const cameras = [];
@@ -106,5 +113,5 @@ for (const el of elements) {
   });
 }
 
-console.log(`OSM: ${cameras.length} unique cameras`);
+console.log(`OSM: ${cameras.length} unique cameras in ${COUNTRY}`);
 writeFileSync(OUTPUT, JSON.stringify(cameras));

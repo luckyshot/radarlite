@@ -9,7 +9,7 @@ The Android home screen is a drive-first dashboard: a large monitoring switch an
 ## Quick info
 
 ```sh
-./gradlew :app:assembleDebug -Pradarlite.dbVersionUrl=https://github.com/OWNER/REPO/releases/latest/download/version.json
+./gradlew :app:assembleDebug -Pradarlite.dbVersionUrl=https://github.com/OWNER/REPO/releases/latest/download/versions.json
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 cp app/build/outputs/apk/debug/app-debug.apk ~/Transfer/radarlite.apk
 ```
@@ -33,14 +33,16 @@ The lightweight motorist-alert scope is documented in [PROJECT_MOTORIST.md](PROJ
 The app downloads alert database metadata from GitHub Releases:
 
 ```
-https://github.com/luckyshot/radarlite/releases/latest/download/version.json
+https://github.com/luckyshot/radarlite/releases/latest/download/versions.json
 ```
 
 For a fork, override this without editing Kotlin:
 
 ```
-./gradlew :app:assembleDebug -Pradarlite.dbVersionUrl=https://github.com/OWNER/REPO/releases/latest/download/version.json
+./gradlew :app:assembleDebug -Pradarlite.dbVersionUrl=https://github.com/OWNER/REPO/releases/latest/download/versions.json
 ```
+
+**Countries:** Up to two countries can be active at once, chosen from two dropdowns under "Alert database" (Country 1 is always active; Country 2 can be set to None). Each active country has its own on-device database (`cameras-<CODE>.db`, e.g. `cameras-ES.db`), downloaded and validated independently, so one country failing to update never affects the other. Switching a dropdown takes effect immediately for monitoring; a country's on-device database is only deleted once it is no longer selected *and* an update check has run (manual tap, or the automatic 7-day-stale prompt) — so turning a country off and back on quickly does not force a re-download.
 
 **Note on sounds:** Audio alerts are generated programmatically via `SoundManager.kt` using `AudioTrack`. No audio files are bundled. Warning alerts play one short 880 Hz tone and one short phrase; urgent alerts play one 500 ms, 1200 Hz tone. Each camera and hazard type can be switched off independently. When enabled, the app says `Over speed limit 50` if it approaches a camera with a known numeric 50 km/h limit while travelling more than 3 km/h over it. Conditional, variable, and multi-value map limits are ignored.
 
@@ -48,32 +50,36 @@ For a fork, override this without editing Kotlin:
 
 **Speed announcements:** Select any of 30, 50, 60, 80, 90, 100, 110, 120, or 130 km/h. While accelerating, the app announces a selected speed once it is exceeded by 5 km/h (for example, 99 to 106 announces 100); it never announces while slowing down. A sparse passive location fix that passes several selections announces only the highest one, so speech stays brief. All speeds are off by default, and announcements use the same fresh passive location fixes as road alerts, so they do not add GPS or network use. Road alerts always take priority over a speed announcement.
 
-**Note on database:** The app gracefully handles a missing bundled database by creating an empty schema. Tap "Check for update" on first run to download the full alert database. Manual checks contact the release metadata each time, then download the database only when a newer version exists. If monitoring is running, it reloads the database after a successful update. On launch, RadarLite prompts for an update when the database has not been checked for 7 days or more; choosing Skip suppresses the prompt for 24 hours.
+**Note on database:** The app gracefully handles a missing database (bundled or not-yet-downloaded) by creating an empty schema. Tap "Check for update" on first run to download the full alert database for each active country. Manual checks contact the release metadata each time, then download a country's database only when a newer version exists for it. If monitoring is running, it reloads the active databases after a successful update. On launch, RadarLite prompts for an update when the database has not been checked for 7 days or more; choosing Skip suppresses the prompt for 24 hours.
 
-To bundle an initial database, run the pipeline locally once and copy the resulting `cameras.db` (not the .gz) into `app/src/main/assets/cameras.db`.
+Only Spain (the default Country 1) ships a bundled starter database, so the app works offline immediately after install without a network request. To bundle it, run the pipeline locally once for Spain and copy the resulting `cameras.db` (not the .gz) into `app/src/main/assets/cameras.db`; the app copies this into `cameras-ES.db` on first run. Every other country downloads on demand once selected.
 
 ### Pipeline (GitHub Actions + GitHub Releases)
 
 1. Fork this repo
 2. Make sure GitHub Actions has write permission for releases: Settings > Actions > General > Workflow permissions > Read and write permissions
-3. The workflow runs every Sunday at 03:00 UTC. Trigger manually via Actions > Update Alert Database > Run workflow
-4. The workflow publishes Spain's `cameras.db.gz` and `version.json` to a GitHub Release. It stops when Overpass returns no alert points, preserving the last known-good release. The Android app uses GitHub's stable `releases/latest/download` URLs.
+3. The workflow runs daily at 03:00 UTC and rebuilds whichever two countries have gone longest without a rebuild (never-built countries are always most overdue), so every country refreshes roughly once a week. Trigger manually via Actions > Update Alert Database > Run workflow to rebuild one specific country right away.
+4. Every country shares one persistent GitHub Release (tag `db-latest`): each run publishes `cameras-<CODE>.db.gz` for the countries it rebuilt plus an updated `versions.json` manifest covering every country ever built, so the Android app's `releases/latest/download` URLs always have every country available even between that country's own rebuilds. A country is skipped (its previous release asset kept as-is) when Overpass returns no alert points for it that run.
 
-Run the pipeline locally with:
+`pipeline/countries.js` is the source of truth for supported countries (name -> ISO3166-1 code); keep it in sync with the `country` dropdown in `.github/workflows/update-db.yml`.
+
+Run the pipeline locally, for one country at a time (`COUNTRY` defaults to `Spain`):
 
 ```
 cd pipeline
 npm ci
-npm run all
+COUNTRY=France npm run all
 ```
 
-The pipeline runs on Node 24 in GitHub Actions and uses the Node 24-compatible v7 checkout and setup actions. Keep native pipeline dependencies, especially `better-sqlite3`, on versions that support Node 24 so `npm ci` can use compatible prebuilt binaries.
+This writes `cameras-<CODE>.db.gz` and `version-<CODE>.json` into `/tmp/release/`. `pipeline/pick_countries.js` (which country is most overdue) and `pipeline/build_manifest.js` (merging per-country version files into `versions.json`) are only used by the GitHub Actions workflow.
+
+The pipeline runs on Node 24 in GitHub Actions and uses the Node 24-compatible v7 checkout and setup actions. Keep native pipeline dependencies, especially `better-sqlite3`, on versions that support Node 24 so `npm ci` can use compatible prebuilt binaries. `fetch_osm.js` retries across three public Overpass mirrors (`overpass-api.de`, `overpass.kumi.systems`, and the Mail.ru mirror), since the primary instance intermittently 504s under load.
 
 ## Data sources
 
-- **OpenStreetMap Spain** via Overpass API: speed-camera/enforcement records and explicit hazard points for curves, dangerous junctions, level crossings, and traffic calming
+- **OpenStreetMap** via Overpass API, per selected country: speed-camera/enforcement records and explicit hazard points for curves, dangerous junctions, level crossings, and traffic calming. Supported countries: Spain, Portugal, France, Germany, Italy, Andorra, United Kingdom, United States, Canada, Australia, New Zealand.
 
-Data is merged with a 25m spatial deduplication radius.
+Data is merged with a 25m spatial deduplication radius, per country.
 
 Alert data is derived from OpenStreetMap and must credit OpenStreetMap under the Open Data Commons Open Database License. See `https://www.openstreetmap.org/copyright`.
 
@@ -98,11 +104,11 @@ CameraDetectionService (ForegroundService)
 ├── LocationStrategy        — passive-only location listener
 ├── AlertEngine             — proximity + direction check + staged alerts
 ├── SoundManager            — programmatic tone generation via AudioTrack
-└── CameraDbHelper          — raw SQLite reads from cameras.db
+└── CameraDbHelper          — raw SQLite reads across up to two active countries' cameras-<CODE>.db
 
 AppDatabase (Room)          — alert_log only
 
-DatabaseUpdater             — OkHttp download of cameras.db.gz from GitHub Releases
+DatabaseUpdater             — OkHttp download of each active country's cameras-<CODE>.db.gz, per the versions.json manifest
 
 ServiceState (StateFlow)    — shared state observable from MainActivity
 ```

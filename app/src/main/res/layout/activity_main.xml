@@ -55,7 +55,9 @@
             <LinearLayout style="@style/StatusRow"><TextView style="@style/RowLabel" android:text="Last fix" /><TextView android:id="@+id/tvLastFix" style="@style/RowValue" android:text="—" /></LinearLayout>
             <LinearLayout style="@style/StatusRow"><TextView style="@style/RowLabel" android:text="Fix time" /><TextView android:id="@+id/tvFixTime" style="@style/RowValue" android:text="—" /></LinearLayout>
         </LinearLayout>
-        <LinearLayout style="@style/ScreenCard"><TextView style="@style/SectionLabel" android:text="ALERT DATABASE" />
+        <LinearLayout style="@style/ScreenCard"><TextView style="@style/SectionLabel" android:text="ALERT DATABASE" /><TextView style="@style/SectionHint" android:text="Up to two countries can be active at once." />
+            <LinearLayout style="@style/StatusRow"><TextView style="@style/RowLabel" android:text="Country 1" /><Spinner android:id="@+id/spinnerCountry1" android:layout_width="wrap_content" android:layout_height="wrap_content" /></LinearLayout>
+            <LinearLayout style="@style/StatusRow"><TextView style="@style/RowLabel" android:text="Country 2" /><Spinner android:id="@+id/spinnerCountry2" android:layout_width="wrap_content" android:layout_height="wrap_content" /></LinearLayout>
             <LinearLayout style="@style/StatusRow"><TextView style="@style/RowLabel" android:text="Version" /><TextView android:id="@+id/tvDbVersion" style="@style/RowValue" android:text="—" /></LinearLayout>
             <LinearLayout style="@style/StatusRow"><TextView style="@style/RowLabel" android:text="Points" /><TextView android:id="@+id/tvDbCount" style="@style/RowValue" android:text="—" /></LinearLayout>
             <LinearLayout style="@style/StatusRow"><TextView style="@style/RowLabel" android:text="Last check" /><TextView android:id="@+id/tvLastCheck" style="@style/RowValue" android:text="—" /></LinearLayout>

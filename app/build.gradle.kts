@@ -15,7 +15,7 @@ android {
         versionCode = 1
         versionName = "1.0.0"
         val dbVersionUrl = providers.gradleProperty("radarlite.dbVersionUrl")
-            .orElse("https://github.com/luckyshot/radarlite/releases/latest/download/version.json")
+            .orElse("https://github.com/luckyshot/radarlite/releases/latest/download/versions.json")
             .get()
         buildConfigField("String", "DB_VERSION_URL", "\"$dbVersionUrl\"")
     }

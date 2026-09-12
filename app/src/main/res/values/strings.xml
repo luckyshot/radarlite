@@ -8,7 +8,6 @@
     <string name="gps_passive">Passive (external GPS only)</string>
     <string name="btn_check_update">Check for update</string>
     <string name="speed_announcement_speed">%1$d km/h</string>
-    <string name="no_database">No database</string>
     <string name="no_alerts">No alerts yet</string>
     <string name="disclaimer_title">Legal notice</string>
     <string name="disclaimer_message">Road-alert apps are illegal or restricted in some countries. You
