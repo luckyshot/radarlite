@@ -17,6 +17,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
@@ -122,7 +123,7 @@ class MainActivity : ComponentActivity() {
                 val lastDbCheckMs by ServiceState.lastDbCheckMs.collectAsState()
                 val activeGpsDeadlineMs by ServiceState.activeGpsDeadlineMs.collectAsState()
 
-                var nowMs by mutableStateOf(System.currentTimeMillis())
+                var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
                 LaunchedEffect(activeGpsDeadlineMs) {
                     while (activeGpsDeadlineMs != null) {
                         nowMs = System.currentTimeMillis()

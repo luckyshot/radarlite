@@ -168,6 +168,8 @@ class CameraDetectionService : Service() {
     private fun activateActiveGps(durationMs: Long) {
         if (durationMs <= 0) return
         if (!monitoring) startMonitoring()
+        // startMonitoring() may have failed to enter the foreground and stopped the service.
+        if (!monitoring) return
         activeGpsEnabled = true
         locationStrategy.startActive()
         ServiceState.gpsMode.value = getString(R.string.gps_active)
