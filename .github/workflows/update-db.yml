@@ -80,7 +80,7 @@ jobs:
       # Every country's cameras.db.gz lives on ONE persistent release so the app's stable
       # "latest" download URLs keep working for countries this run did not rebuild.
       - name: Publish to GitHub Releases
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: db-latest
           name: Alert Database

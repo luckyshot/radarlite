@@ -9,7 +9,7 @@ The Android home screen is a drive-first dashboard: a large monitoring switch an
 ## Quick info
 
 ```sh
-./gradlew :app:assembleDebug -Pradarlite.dbVersionUrl=https://github.com/OWNER/REPO/releases/latest/download/versions.json
+./gradlew :app:assembleDebug -Pradarlite.dbVersionUrl=https://github.com/luckyshot/radarlite/releases/latest/download/versions.json
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 cp app/build/outputs/apk/debug/app-debug.apk ~/Transfer/radarlite.apk
 ```

@@ -8,39 +8,50 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.view.View
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.AppCompatCheckBox
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
-import androidx.lifecycle.Lifecycle
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.radarlite.alert.AlertStage
 import com.radarlite.alert.SoundManager
-import com.radarlite.databinding.ActivityMainBinding
-import com.radarlite.db.AppDatabase
 import com.radarlite.db.AlertLogEntry
+import com.radarlite.db.AppDatabase
 import com.radarlite.db.CameraDbHelper
 import com.radarlite.service.CameraDetectionService
-import com.radarlite.ui.AlertLogAdapter
+import com.radarlite.ui.ALERT_TYPES
+import com.radarlite.ui.BackgroundLocationDialog
+import com.radarlite.ui.DatabaseMissingDialog
+import com.radarlite.ui.DatabaseStaleDialog
+import com.radarlite.ui.DisclaimerDialog
+import com.radarlite.ui.MainScreen
+import com.radarlite.ui.MainScreenActions
+import com.radarlite.ui.MainUiState
+import com.radarlite.ui.theme.RadarLiteTheme
 import com.radarlite.update.DatabaseUpdater
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.*
 
-class MainActivity : AppCompatActivity() {
+private enum class PendingDialog { NONE, DISCLAIMER, BG_LOCATION, DB_MISSING, DB_STALE }
 
-    private lateinit var binding: ActivityMainBinding
-    private lateinit var adapter: AlertLogAdapter
+class MainActivity : ComponentActivity() {
+
     private lateinit var soundManager: SoundManager
     private val prefs by lazy { getSharedPreferences("radarlite_prefs", MODE_PRIVATE) }
+
+    private var serviceEnabled by mutableStateOf(false)
+    private var country1Code by mutableStateOf(Countries.DEFAULT_CODE)
+    private var country2Code by mutableStateOf(Countries.NONE_CODE)
+    private var alertToggles by mutableStateOf<Map<String, Boolean>>(emptyMap())
+    private var overspeedEnabled by mutableStateOf(true)
+    private var selectedSpeeds by mutableStateOf<Set<Int>>(emptySet())
+    private var updatingDb by mutableStateOf(false)
+    private var pendingDialog by mutableStateOf(PendingDialog.NONE)
 
     // Permission launchers (must be declared before onCreate)
     private val requestFineLocation = registerForActivityResult(
@@ -50,7 +61,7 @@ class MainActivity : AppCompatActivity() {
             requestBackgroundLocation()
         } else {
             showToast("Location permission required")
-            binding.switchService.isChecked = false
+            serviceEnabled = false
         }
     }
 
@@ -60,18 +71,18 @@ class MainActivity : AppCompatActivity() {
         if (granted) requestPostNotifications()
         else {
             showToast(getString(R.string.perm_bg_required))
-            binding.switchService.isChecked = false
+            serviceEnabled = false
         }
     }
 
     private val openAppSettings = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {
-        if (!binding.switchService.isChecked) return@registerForActivityResult
+        if (!serviceEnabled) return@registerForActivityResult
         if (hasBgLocation()) requestPostNotifications()
         else {
             showToast(getString(R.string.perm_bg_required))
-            binding.switchService.isChecked = false
+            serviceEnabled = false
         }
     }
 
@@ -83,21 +94,110 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
         soundManager = SoundManager(this)
 
-        setupRecyclerView()
-        setupSwitch()
-        setupCountrySelectors()
-        setupSpeedAnnouncements()
-        setupAlertToggles()
-        setupUpdateButton()
-        setupSoundButtons()
-        setupLastFixLink()
-        setupAboutLinks()
-        observeServiceState()
-        observeAlertLog()
+        loadSettingsFromPrefs()
+
+        setContent {
+            RadarLiteTheme {
+                val recentAlerts by AppDatabase.get(this).alertLogDao().getRecent()
+                    .observeAsState(emptyList())
+
+                val isRunning by ServiceState.isRunning.collectAsState()
+                val isReceiving by ServiceState.isReceivingLocation.collectAsState()
+                val speedKmh by ServiceState.speedKmh.collectAsState()
+                val bearing by ServiceState.bearingDeg.collectAsState()
+                val accuracy by ServiceState.accuracyM.collectAsState()
+                val lastLat by ServiceState.lastLat.collectAsState()
+                val lastLon by ServiceState.lastLon.collectAsState()
+                val lastFixMs by ServiceState.lastFixMs.collectAsState()
+                val camerasNearby by ServiceState.camerasNearby.collectAsState()
+                val closestDistance by ServiceState.closestCameraDistanceM.collectAsState()
+                val gpsMode by ServiceState.gpsMode.collectAsState()
+                val dbVersion by ServiceState.dbVersion.collectAsState()
+                val dbCameraCount by ServiceState.dbCameraCount.collectAsState()
+                val lastDbCheckMs by ServiceState.lastDbCheckMs.collectAsState()
+
+                val state = MainUiState(
+                    serviceEnabled = serviceEnabled,
+                    isRunning = isRunning,
+                    isReceivingLocation = isReceiving,
+                    speedKmh = speedKmh,
+                    closestCameraDistanceM = closestDistance,
+                    camerasNearby = camerasNearby,
+                    heading = formatHeading(bearing),
+                    gpsMode = gpsMode,
+                    accuracyM = accuracy,
+                    lastLat = lastLat,
+                    lastLon = lastLon,
+                    lastFixMs = lastFixMs,
+                    country1Code = country1Code,
+                    country2Code = country2Code,
+                    dbVersion = dbVersion,
+                    dbCameraCount = dbCameraCount,
+                    lastDbCheckMs = lastDbCheckMs,
+                    updatingDb = updatingDb,
+                    alertToggles = alertToggles,
+                    overspeedEnabled = overspeedEnabled,
+                    selectedSpeeds = selectedSpeeds,
+                    recentAlerts = recentAlerts,
+                )
+
+                MainScreen(
+                    state = state,
+                    actions = MainScreenActions(
+                        onToggleService = ::onToggleService,
+                        onCountry1Selected = ::onCountry1Selected,
+                        onCountry2Selected = ::onCountry2Selected,
+                        onSpeedToggle = ::onSpeedToggle,
+                        onAlertToggle = ::onAlertToggle,
+                        onOverspeedToggle = ::onOverspeedToggle,
+                        onCheckUpdate = { lifecycleScope.launch { runDatabaseUpdate() } },
+                        onTestSound = { type, limit, overspeed ->
+                            soundManager.play(AlertStage.WARNING, limit, type, overspeed)
+                        },
+                        onTestUrgent = { soundManager.play(AlertStage.URGENT) },
+                        onLastFixClick = ::openLastFixInMaps,
+                        onAlertEntryClick = ::openAlertInMaps,
+                        onPrivacyClick = { openExternal(getString(R.string.url_privacy), R.string.no_browser) },
+                        onSourceClick = { openExternal(getString(R.string.url_source), R.string.no_browser) },
+                        onOsmClick = { openExternal(getString(R.string.url_osm), R.string.no_browser) },
+                    ),
+                )
+
+                when (pendingDialog) {
+                    PendingDialog.DISCLAIMER -> DisclaimerDialog(onAccept = ::onDisclaimerAccepted)
+                    PendingDialog.BG_LOCATION -> BackgroundLocationDialog(
+                        onOpenSettings = ::onBgLocationSettingsConfirmed,
+                        onCancel = { pendingDialog = PendingDialog.NONE; serviceEnabled = false },
+                    )
+                    PendingDialog.DB_MISSING -> DatabaseMissingDialog(
+                        onDownload = {
+                            pendingDialog = PendingDialog.NONE
+                            lifecycleScope.launch { runDatabaseUpdate() }
+                        },
+                        onLater = {
+                            pendingDialog = PendingDialog.NONE
+                            promptForStaleDatabaseIfNeeded()
+                        },
+                    )
+                    PendingDialog.DB_STALE -> DatabaseStaleDialog(
+                        onUpdate = {
+                            pendingDialog = PendingDialog.NONE
+                            lifecycleScope.launch { runDatabaseUpdate() }
+                        },
+                        onSkip = {
+                            pendingDialog = PendingDialog.NONE
+                            DatabaseUpdater.markStalePromptShown(this)
+                        },
+                    )
+                    PendingDialog.NONE -> Unit
+                }
+            }
+        }
+
+        refreshDatabaseState()
+        if (serviceEnabled) checkPermissionsAndStart()
         showDisclaimerIfFirst { promptForInitialDatabaseIfMissing() }
     }
 
@@ -106,64 +206,35 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
-    // ---- Setup ----
+    // ---- Settings load/save ----
 
-    private fun setupRecyclerView() {
-        adapter = AlertLogAdapter { openAlertInMaps(it) }
-        binding.rvAlerts.layoutManager = LinearLayoutManager(this)
-        binding.rvAlerts.adapter = adapter
+    private fun loadSettingsFromPrefs() {
+        serviceEnabled = prefs.getBoolean("service_enabled", false)
+        country1Code = CountrySettings.country1(this)
+        country2Code = CountrySettings.country2(this)
+        alertToggles = ALERT_TYPES.associate { it.key to AlertSettings.enabled(this, it.key) }
+        overspeedEnabled = AlertSettings.overspeedEnabled(this)
+        selectedSpeeds = SpeedAnnouncements.selected(this)
     }
 
-    private fun setupSwitch() {
-        val enabled = prefs.getBoolean("service_enabled", false)
-        binding.switchService.isChecked = enabled
-        binding.switchService.setOnCheckedChangeListener { _, checked ->
-            prefs.edit().putBoolean("service_enabled", checked).apply()
-            if (checked) checkPermissionsAndStart() else stopService()
-        }
-        // App updates and debug reinstalls can stop the service while preserving this preference.
-        if (enabled) checkPermissionsAndStart()
+    private fun onToggleService(checked: Boolean) {
+        serviceEnabled = checked
+        prefs.edit().putBoolean("service_enabled", checked).apply()
+        if (checked) checkPermissionsAndStart() else stopService()
     }
 
-    // Country 1 is always active; country 2 adds a "None" option to disable a second country.
-    // Switching either one takes effect immediately for monitoring, but an on-device database
-    // for a deselected country is only deleted the next time an update check runs.
-    private fun setupCountrySelectors() {
-        val names = Countries.ALL.map { it.first }
-        binding.spinnerCountry1.adapter = countrySpinnerAdapter(names)
-        val country2Names = listOf(Countries.NONE_LABEL) + names
-        binding.spinnerCountry2.adapter = countrySpinnerAdapter(country2Names)
-
-        binding.spinnerCountry1.setSelection(names.indexOf(Countries.nameFor(CountrySettings.country1(this))).coerceAtLeast(0))
-        val code2 = CountrySettings.country2(this)
-        binding.spinnerCountry2.setSelection(
-            if (code2.isEmpty()) 0 else country2Names.indexOf(Countries.nameFor(code2)).coerceAtLeast(0)
-        )
-
-        binding.spinnerCountry1.onItemSelectedListener = onCountrySelected { position ->
-            val code = Countries.codeFor(names[position]) ?: return@onCountrySelected
-            if (code != CountrySettings.country1(this)) {
-                CountrySettings.setCountry1(this, code)
-                onActiveCountriesChanged()
-            }
-        }
-        binding.spinnerCountry2.onItemSelectedListener = onCountrySelected { position ->
-            val code = if (position == 0) Countries.NONE_CODE else Countries.codeFor(country2Names[position]) ?: return@onCountrySelected
-            if (code != CountrySettings.country2(this)) {
-                CountrySettings.setCountry2(this, code)
-                onActiveCountriesChanged()
-            }
-        }
+    private fun onCountry1Selected(code: String) {
+        if (code == country1Code) return
+        country1Code = code
+        CountrySettings.setCountry1(this, code)
+        onActiveCountriesChanged()
     }
 
-    private fun countrySpinnerAdapter(items: List<String>) =
-        ArrayAdapter(this, android.R.layout.simple_spinner_item, items).apply {
-            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        }
-
-    private fun onCountrySelected(onSelected: (Int) -> Unit) = object : AdapterView.OnItemSelectedListener {
-        override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) = onSelected(position)
-        override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+    private fun onCountry2Selected(code: String) {
+        if (code == country2Code) return
+        country2Code = code
+        CountrySettings.setCountry2(this, code)
+        onActiveCountriesChanged()
     }
 
     private fun onActiveCountriesChanged() {
@@ -173,86 +244,34 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupUpdateButton() {
-        binding.btnCheckUpdate.setOnClickListener {
-            lifecycleScope.launch {
-                runDatabaseUpdate()
-            }
-        }
+    private fun onSpeedToggle(speed: Int, enabled: Boolean) {
+        SpeedAnnouncements.setSelected(this, speed, enabled)
+        selectedSpeeds = SpeedAnnouncements.selected(this)
     }
 
-    private fun setupSpeedAnnouncements() {
-        val selectedSpeeds = SpeedAnnouncements.selected(this)
-        SpeedAnnouncements.speeds.forEach { speed ->
-            binding.speedAnnouncementOptions.addView(AppCompatCheckBox(this).apply {
-                text = getString(R.string.speed_announcement_speed, speed)
-                isChecked = speed in selectedSpeeds
-                setOnCheckedChangeListener { _, checked ->
-                    SpeedAnnouncements.setSelected(this@MainActivity, speed, checked)
-                }
-            })
-        }
+    private fun onAlertToggle(type: String, enabled: Boolean) {
+        AlertSettings.setEnabled(this, type, enabled)
+        alertToggles = alertToggles + (type to enabled)
     }
 
-    private fun setupAlertToggles() {
-        val toggles = mapOf(
-            binding.switchSpeedCamera to AlertSettings.SPEED,
-            binding.switchRedLight to AlertSettings.RED_LIGHT,
-            binding.switchAverageSpeed to AlertSettings.AVERAGE_SPEED,
-            binding.switchSharpCurve to AlertSettings.SHARP_CURVE,
-            binding.switchDangerousJunction to AlertSettings.DANGEROUS_JUNCTION,
-            binding.switchLevelCrossing to AlertSettings.LEVEL_CROSSING,
-            binding.switchTrafficCalming to AlertSettings.TRAFFIC_CALMING
-        )
-        toggles.forEach { (toggle, type) ->
-            toggle.isChecked = AlertSettings.enabled(this, type)
-            toggle.setOnCheckedChangeListener { _, checked -> AlertSettings.setEnabled(this, type, checked) }
-        }
-        binding.switchOverspeed.isChecked = AlertSettings.overspeedEnabled(this)
-        binding.switchOverspeed.setOnCheckedChangeListener { _, checked ->
-            AlertSettings.setOverspeedEnabled(this, checked)
-        }
+    private fun onOverspeedToggle(enabled: Boolean) {
+        AlertSettings.setOverspeedEnabled(this, enabled)
+        overspeedEnabled = enabled
     }
 
-    private fun setupSoundButtons() {
-        setupSoundTest(binding.btnTestCamera, "speed", speedLimit = 50)
-        setupSoundTest(binding.btnTestOverspeed, "speed", speedLimit = 50, overspeed = true)
-        setupSoundTest(binding.btnTestCurve, "sharp_curve")
-        setupSoundTest(binding.btnTestJunction, "dangerous_junction")
-        setupSoundTest(binding.btnTestCrossing, "level_crossing")
-        binding.btnTestUrgent.setOnClickListener { soundManager.play(AlertStage.URGENT) }
-    }
-
-    // All warning previews use the same production sound path.
-    private fun setupSoundTest(button: View, type: String, speedLimit: Int? = null, overspeed: Boolean = false) {
-        button.setOnClickListener { soundManager.play(AlertStage.WARNING, speedLimit, type, overspeed) }
-    }
-
-    private fun setupLastFixLink() {
-        binding.tvLastFix.setOnClickListener { openLastFixInMaps() }
-    }
-
-    private fun setupAboutLinks() {
-        binding.tvPrivacy.setOnClickListener { openExternal(getString(R.string.url_privacy), R.string.no_browser) }
-        binding.tvSource.setOnClickListener { openExternal(getString(R.string.url_source), R.string.no_browser) }
-        binding.tvOsm.setOnClickListener { openExternal(getString(R.string.url_osm), R.string.no_browser) }
-    }
+    // ---- Database update ----
 
     private suspend fun runDatabaseUpdate(): DatabaseUpdater.Result {
-        binding.btnCheckUpdate.isEnabled = false
-        binding.btnCheckUpdate.text = getString(R.string.updating_db)
-
+        updatingDb = true
         val result = DatabaseUpdater.checkAndUpdate(applicationContext)
         val msg = when (result) {
-            DatabaseUpdater.Result.UPDATED      -> getString(R.string.db_updated)
-            DatabaseUpdater.Result.UP_TO_DATE   -> getString(R.string.db_up_to_date)
-            DatabaseUpdater.Result.FAILED       -> getString(R.string.db_update_failed)
+            DatabaseUpdater.Result.UPDATED -> getString(R.string.db_updated)
+            DatabaseUpdater.Result.UP_TO_DATE -> getString(R.string.db_up_to_date)
+            DatabaseUpdater.Result.FAILED -> getString(R.string.db_update_failed)
         }
         showToast(msg)
-        binding.btnCheckUpdate.text = getString(R.string.btn_check_update)
-        binding.btnCheckUpdate.isEnabled = true
-        if (result == DatabaseUpdater.Result.UPDATED ||
-            result == DatabaseUpdater.Result.UP_TO_DATE) {
+        updatingDb = false
+        if (result == DatabaseUpdater.Result.UPDATED || result == DatabaseUpdater.Result.UP_TO_DATE) {
             ServiceState.lastDbCheckMs.value = System.currentTimeMillis()
         }
         if (result == DatabaseUpdater.Result.UPDATED && ServiceState.isRunning.value) {
@@ -276,29 +295,12 @@ class MainActivity : AppCompatActivity() {
             promptForStaleDatabaseIfNeeded()
             return
         }
-
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.db_missing_title))
-            .setMessage(getString(R.string.db_missing_message))
-            .setPositiveButton(getString(R.string.db_missing_download)) { _, _ ->
-                lifecycleScope.launch { runDatabaseUpdate() }
-            }
-            .setNegativeButton(getString(R.string.db_missing_later), null)
-            .show()
+        pendingDialog = PendingDialog.DB_MISSING
     }
 
     private fun promptForStaleDatabaseIfNeeded() {
         if (!DatabaseUpdater.shouldPromptForStale(this)) return
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.db_stale_title))
-            .setMessage(getString(R.string.db_stale_message))
-            .setPositiveButton(getString(R.string.db_stale_update)) { _, _ ->
-                lifecycleScope.launch { runDatabaseUpdate() }
-            }
-            .setNegativeButton(getString(R.string.db_stale_skip)) { _, _ ->
-                DatabaseUpdater.markStalePromptShown(this)
-            }
-            .show()
+        pendingDialog = PendingDialog.DB_STALE
     }
 
     private fun refreshDatabaseState() {
@@ -313,109 +315,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ---- Observe state ----
-
-    private fun observeServiceState() {
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch {
-                    combine(ServiceState.isRunning, ServiceState.isReceivingLocation) { running, receiving ->
-                        running to receiving
-                    }.collect { (running, receiving) ->
-                        binding.tvServiceStatus.text = when {
-                            !running  -> getString(R.string.status_stopped)
-                            receiving -> getString(R.string.status_gathering)
-                            else      -> getString(R.string.status_idle)
-                        }
-                        binding.tvServiceStatus.setBackgroundResource(when {
-                            !running  -> R.drawable.badge_status_stopped
-                            receiving -> R.drawable.badge_status_active
-                            else      -> R.drawable.badge_status_idle
-                        })
-                        binding.tvServiceStatus.setTextColor(
-                            ContextCompat.getColor(this@MainActivity,
-                                if (running && receiving) R.color.status_active else R.color.text_primary)
-                        )
-                    }
-                }
-                launch {
-                    ServiceState.speedKmh.collect { speed ->
-                        binding.tvSpeed.text = if (speed > 0) "${speed.toInt()} km/h" else "—"
-                    }
-                }
-                launch {
-                    ServiceState.bearingDeg.collect { bearing ->
-                        binding.tvHeading.text = formatHeading(bearing)
-                    }
-                }
-                launch {
-                    ServiceState.accuracyM.collect { accuracy ->
-                        binding.tvAccuracy.text = accuracy?.let { "${it.toInt()} m" } ?: "—"
-                    }
-                }
-                launch {
-                    combine(ServiceState.lastLat, ServiceState.lastLon) { lat, lon ->
-                        lat to lon
-                    }.collect { (lat, lon) ->
-                        binding.tvLastFix.text = formatCoordinates(lat, lon)
-                        binding.tvLastFix.isEnabled = lat != null && lon != null
-                        binding.tvLastFix.setTextColor(ContextCompat.getColor(
-                            this@MainActivity,
-                            if (lat != null && lon != null) R.color.accent else R.color.text_primary
-                        ))
-                    }
-                }
-                launch {
-                    ServiceState.lastFixMs.collect { ms ->
-                        binding.tvFixTime.text = formatFixTime(ms)
-                    }
-                }
-                launch {
-                    ServiceState.camerasNearby.collect { count ->
-                        binding.tvCamerasNear.text = count.toString()
-                    }
-                }
-                launch {
-                    ServiceState.closestCameraDistanceM.collect { distance ->
-                        binding.tvClosestCamera.text = formatDistance(distance)
-                    }
-                }
-                launch {
-                    ServiceState.gpsMode.collect { mode ->
-                        binding.tvGpsMode.text = mode
-                    }
-                }
-                launch {
-                    ServiceState.dbVersion.collect { ver ->
-                        binding.tvDbVersion.text = ver
-                    }
-                }
-                launch {
-                    ServiceState.dbCameraCount.collect { count ->
-                        binding.tvDbCount.text = if (count > 0)
-                            "%,d".format(count)
-                        else "No database"
-                    }
-                }
-                launch {
-                    ServiceState.lastDbCheckMs.collect { ms ->
-                        binding.tvLastCheck.text = if (ms > 0)
-                            SimpleDateFormat("dd MMM HH:mm", Locale.getDefault()).format(Date(ms))
-                        else "Never"
-                    }
-                }
-            }
-        }
-    }
-
-    private fun observeAlertLog() {
-        AppDatabase.get(this).alertLogDao().getRecent().observe(this) { entries ->
-            adapter.submit(entries)
-            binding.tvNoAlerts.visibility = if (entries.isEmpty()) View.VISIBLE else View.GONE
-            binding.rvAlerts.visibility   = if (entries.isEmpty()) View.GONE   else View.VISIBLE
-        }
-    }
-
     // ---- Service control ----
 
     private fun checkPermissionsAndStart() {
@@ -424,27 +323,25 @@ class MainActivity : AppCompatActivity() {
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION
             ))
-            !hasBgLocation()   -> requestBackgroundLocation()
+            !hasBgLocation() -> requestBackgroundLocation()
             !hasPostNotifications() -> requestPostNotifications()
-            else               -> startService()
+            else -> startService()
         }
     }
 
     private fun requestBackgroundLocation() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) { requestPostNotifications(); return }
         if (hasBgLocation()) { requestPostNotifications(); return }
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.perm_bg_title))
-            .setMessage(getString(R.string.perm_bg_message))
-            .setPositiveButton(getString(R.string.perm_bg_open_settings)) { _, _ ->
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    openAppSettings.launch(appLocationSettingsIntent())
-                } else {
-                    requestBgLocation.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-                }
-            }
-            .setNegativeButton(getString(R.string.cancel)) { _, _ -> binding.switchService.isChecked = false }
-            .show()
+        pendingDialog = PendingDialog.BG_LOCATION
+    }
+
+    private fun onBgLocationSettingsConfirmed() {
+        pendingDialog = PendingDialog.NONE
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            openAppSettings.launch(appLocationSettingsIntent())
+        } else {
+            requestBgLocation.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        }
     }
 
     private fun appLocationSettingsIntent(): Intent =
@@ -488,20 +385,17 @@ class MainActivity : AppCompatActivity() {
             onDone()
             return
         }
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.disclaimer_title))
-            .setMessage(getString(R.string.disclaimer_message))
-            .setPositiveButton(getString(R.string.disclaimer_ok)) { _, _ ->
-                prefs.edit().putBoolean("disclaimer_shown", true).apply()
-                onDone()
-            }
-            .setCancelable(false)
-            .show()
+        pendingDialogOnDone = onDone
+        pendingDialog = PendingDialog.DISCLAIMER
     }
 
-    private fun formatDistance(distanceM: Float?): String {
-        if (distanceM == null) return "—"
-        return if (distanceM < 1000f) "${distanceM.toInt()} m" else "%.1f km".format(distanceM / 1000f)
+    private var pendingDialogOnDone: (() -> Unit)? = null
+
+    private fun onDisclaimerAccepted() {
+        prefs.edit().putBoolean("disclaimer_shown", true).apply()
+        pendingDialog = PendingDialog.NONE
+        pendingDialogOnDone?.invoke()
+        pendingDialogOnDone = null
     }
 
     private fun formatHeading(bearing: Float?): String {
@@ -510,12 +404,6 @@ class MainActivity : AppCompatActivity() {
         val index = (((bearing + 22.5f) / 45f).toInt() % names.size)
         return "${names[index]} ${bearing.toInt()}°"
     }
-
-    private fun formatCoordinates(lat: Double?, lon: Double?): String =
-        if (lat == null || lon == null) "—" else "%.5f, %.5f".format(lat, lon)
-
-    private fun formatFixTime(ms: Long?): String =
-        ms?.let { SimpleDateFormat("dd MMM HH:mm:ss", Locale.getDefault()).format(Date(it)) } ?: "—"
 
     private fun openLastFixInMaps() {
         val lat = ServiceState.lastLat.value ?: return
@@ -534,13 +422,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun alertMapLabel(entry: AlertLogEntry): String {
         val type = when (entry.cameraType) {
-            "red_light"     -> "Red light"
+            "red_light" -> "Red light"
             "average_speed" -> "Average speed zone"
             "sharp_curve" -> "Sharp curve"
             "dangerous_junction" -> "Dangerous junction"
             "level_crossing" -> "Level crossing"
             "traffic_calming" -> "Traffic calming"
-            else            -> "Speed limit"
+            else -> "Speed limit"
         }
         return entry.speedLimit?.let { "$type $it" } ?: type
     }
