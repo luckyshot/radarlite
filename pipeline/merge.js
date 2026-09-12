@@ -27,21 +27,16 @@ function neighborKeys(lat, lon) {
   return keys;
 }
 
+// Same physical camera mapped twice (e.g. two nearby OSM points): keep the first
+// position, fill in whichever fields the duplicate has that the first is missing.
 function mergeTwo(a, b) {
-  // prefer OSM record for position; fill nulls from the other source
-  const primary = (a.sources || '').includes('osm') ? a : b;
-  const other   = primary === a ? b : a;
-  const sources = [...new Set([
-    ...(primary.sources || '').split(','),
-    ...(other.sources   || '').split(',')
-  ].filter(Boolean))].sort().join(',');
   return {
-    lat:         primary.lat,
-    lon:         primary.lon,
-    speed_limit: primary.speed_limit ?? other.speed_limit ?? null,
-    type:        primary.type !== 'speed' ? primary.type : other.type,
-    direction:   primary.direction ?? other.direction ?? null,
-    sources
+    lat:         a.lat,
+    lon:         a.lon,
+    speed_limit: a.speed_limit ?? b.speed_limit ?? null,
+    type:        a.type !== 'speed' ? a.type : b.type,
+    direction:   a.direction ?? b.direction ?? null,
+    sources:     a.sources
   };
 }
 

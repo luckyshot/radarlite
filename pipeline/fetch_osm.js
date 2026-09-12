@@ -2,27 +2,38 @@
 // Fetch explicit, lightweight road-alert points from OpenStreetMap via Overpass API.
 import { writeFileSync } from 'fs';
 
-const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
-const OUTPUT      = '/tmp/osm_cameras.json';
+// Public mirrors of the Overpass API. overpass-api.de intermittently returns 504s
+// under load, so failed attempts rotate to another mirror instead of hammering the same one.
+const OVERPASS_URLS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter'
+];
+const OUTPUT = '/tmp/osm_cameras.json';
 
 const QUERY = `
 [out:json][timeout:300];
+// Use Spain's administrative area so the shared Overpass server does not have
+// to assemble every matching alert point in the world.
+area["ISO3166-1"="ES"]["boundary"="administrative"]->.spain;
 (
-  relation["type"="enforcement"]["enforcement"~"maxspeed|average_speed"];
-  node["highway"="speed_camera"];
-  node["hazard"="curve"];
-  node["hazard"="dangerous_junction"];
-  node["railway"="level_crossing"];
-  node["traffic_calming"];
+  relation(area.spain)["type"="enforcement"]["enforcement"~"maxspeed|average_speed|traffic_signals"];
+  node(area.spain)["highway"="speed_camera"];
+  node(area.spain)["hazard"="curve"];
+  node(area.spain)["hazard"="dangerous_junction"];
+  node(area.spain)["railway"="level_crossing"];
+  node(area.spain)["traffic_calming"];
 );
 out center;
 `;
 
 async function fetchOverpass(query) {
   console.log('Fetching OSM data (this takes a few minutes)...');
-  for (let attempt = 0; attempt < 3; attempt++) {
+  const attempts = OVERPASS_URLS.length * 2;
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    const url = OVERPASS_URLS[attempt % OVERPASS_URLS.length];
     try {
-      const res = await fetch(OVERPASS_URL, {
+      const res = await fetch(url, {
         method:  'POST',
         body:    `data=${encodeURIComponent(query)}`,
         headers: {
@@ -31,12 +42,12 @@ async function fetchOverpass(query) {
         },
         signal: AbortSignal.timeout(360_000)
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status} from ${url}`);
       const data = await res.json();
       return data.elements || [];
     } catch (e) {
-      console.error(`  Attempt ${attempt + 1} failed: ${e.message}`);
-      if (attempt < 2) await sleep(30_000 * (attempt + 1));
+      console.error(`  Attempt ${attempt + 1} (${url}) failed: ${e.message}`);
+      if (attempt < attempts - 1) await sleep(30_000 * (attempt % OVERPASS_URLS.length + 1));
     }
   }
   return [];

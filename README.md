@@ -57,7 +57,7 @@ To bundle an initial database, run the pipeline locally once and copy the result
 1. Fork this repo
 2. Make sure GitHub Actions has write permission for releases: Settings > Actions > General > Workflow permissions > Read and write permissions
 3. The workflow runs every Sunday at 03:00 UTC. Trigger manually via Actions > Update Alert Database > Run workflow
-4. The workflow publishes `cameras.db.gz` and `version.json` to a GitHub Release. It stops when Overpass returns no alert points, preserving the last known-good release. The Android app uses GitHub's stable `releases/latest/download` URLs.
+4. The workflow publishes Spain's `cameras.db.gz` and `version.json` to a GitHub Release. It stops when Overpass returns no alert points, preserving the last known-good release. The Android app uses GitHub's stable `releases/latest/download` URLs.
 
 Run the pipeline locally with:
 
@@ -67,11 +67,11 @@ npm ci
 npm run all
 ```
 
-The pipeline runs on Node 24 in GitHub Actions. Keep native pipeline dependencies, especially `better-sqlite3`, on versions that support Node 24 so `npm ci` can use compatible prebuilt binaries.
+The pipeline runs on Node 24 in GitHub Actions and uses the Node 24-compatible v7 checkout and setup actions. Keep native pipeline dependencies, especially `better-sqlite3`, on versions that support Node 24 so `npm ci` can use compatible prebuilt binaries.
 
 ## Data sources
 
-- **OpenStreetMap** via Overpass API: speed-camera/enforcement records and explicit hazard points for curves, dangerous junctions, level crossings, and traffic calming
+- **OpenStreetMap Spain** via Overpass API: speed-camera/enforcement records and explicit hazard points for curves, dangerous junctions, level crossings, and traffic calming
 
 Data is merged with a 25m spatial deduplication radius.
 
