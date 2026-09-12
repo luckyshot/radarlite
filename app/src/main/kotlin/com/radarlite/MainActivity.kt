@@ -168,10 +168,8 @@ class MainActivity : ComponentActivity() {
                         onAlertToggle = ::onAlertToggle,
                         onOverspeedToggle = ::onOverspeedToggle,
                         onCheckUpdate = { lifecycleScope.launch { runDatabaseUpdate() } },
-                        onTestSound = { type, limit, overspeed ->
-                            soundManager.play(AlertStage.WARNING, limit, type, overspeed)
-                        },
-                        onTestUrgent = { soundManager.play(AlertStage.URGENT) },
+                        onTestSound = { type, limit, overspeed -> testSound(AlertStage.WARNING, limit, type, overspeed) },
+                        onTestUrgent = { testSound(AlertStage.URGENT) },
                         onLastFixClick = ::openLastFixInMaps,
                         onAlertEntryClick = ::openAlertInMaps,
                         onPrivacyClick = { openExternal(getString(R.string.url_privacy), R.string.no_browser) },
@@ -433,6 +431,11 @@ class MainActivity : ComponentActivity() {
         val names = arrayOf("N", "NE", "E", "SE", "S", "SW", "W", "NW")
         val index = (((bearing + 22.5f) / 45f).toInt() % names.size)
         return "${names[index]} ${bearing.toInt()}°"
+    }
+
+    private fun testSound(stage: AlertStage, speedLimit: Int? = null, cameraType: String? = null, overspeed: Boolean = false) {
+        val played = soundManager.play(stage, speedLimit, cameraType, overspeed, bypassSilentMode = true)
+        if (!played) showToast("Turn up your media volume to hear the test")
     }
 
     private fun openLastFixInMaps() {

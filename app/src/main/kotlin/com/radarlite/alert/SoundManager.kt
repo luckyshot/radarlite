@@ -26,13 +26,20 @@ class SoundManager(context: Context) {
 
     private data class Speech(val text: String, val alert: Int? = null)
 
+    /**
+     * Returns false when nothing was played: either the phone's ringer is silent (skipped
+     * unless [bypassSilentMode] is set, e.g. for an explicit on-screen sound test) or the media
+     * volume is at zero, in which case playback would be inaudible anyway.
+     */
     fun play(
         stage: AlertStage,
         speedLimit: Int? = null,
         cameraType: String? = null,
-        overspeed: Boolean = false
-    ) {
-        if (audioManager.ringerMode == AudioManager.RINGER_MODE_SILENT) return
+        overspeed: Boolean = false,
+        bypassSilentMode: Boolean = false,
+    ): Boolean {
+        if (!bypassSilentMode && audioManager.ringerMode == AudioManager.RINGER_MODE_SILENT) return false
+        if (audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) == 0) return false
         val id = alertId.incrementAndGet()
         reserveSpeechForAlert(id)
         scope.launch {
@@ -48,6 +55,7 @@ class SoundManager(context: Context) {
                 }
             }
         }
+        return true
     }
 
     // Speed announcements intentionally have no tone: only the selected number is spoken.
