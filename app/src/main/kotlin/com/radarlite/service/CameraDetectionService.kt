@@ -33,7 +33,7 @@ class CameraDetectionService : Service() {
         const val EXTRA_DURATION_MS    = "duration_ms"
         const val NOTIFICATION_ID      = 1
         const val CHANNEL_ID           = "radarlite_service"
-        private const val MAX_PASSIVE_FIX_AGE_MS = 30_000L
+        private const val MAX_FIX_AGE_MS = 30_000L
         private const val PASSIVE_LISTENER_REFRESH_MS = 10 * 60 * 1000L
 
         fun start(context: Context, action: String = ACTION_START) {
@@ -242,7 +242,7 @@ class CameraDetectionService : Service() {
     }
 
     private fun isFreshFix(state: LocationState): Boolean =
-        state.timeMs > 0 && System.currentTimeMillis() - state.timeMs <= MAX_PASSIVE_FIX_AGE_MS
+        state.timeMs > 0 && System.currentTimeMillis() - state.timeMs <= MAX_FIX_AGE_MS
 
     private fun announceSpeed(speedKmh: Float) {
         speedAnnouncements.next(speedKmh, SpeedAnnouncements.selected(this))
